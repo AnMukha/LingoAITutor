@@ -2,6 +2,7 @@ using LingoAITutor.Host.Endpoints;
 using LingoAITutor.Host.Infrastructure;
 using LingoAITutor.Host.Utilities;
 using Microsoft.EntityFrameworkCore;
+using OpenAI_API;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<LingoDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddTransient<VocabluaryImport>();
+builder.Services.AddSingleton(new OpenAIAPI("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"));
 
 builder.Services.AddCors();
 
