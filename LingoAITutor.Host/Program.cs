@@ -76,6 +76,11 @@ static void SeedDatabase(IServiceScope scope)
         var path = Path.Combine(env.ContentRootPath, "Txt");
         vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
     }
+    if(!context.Users.Any())
+    {
+        context.Users.Add(new LingoAITutor.Host.Entities.User() { Id = new Guid("5944D4A0-0D55-402B-B247-42E6765B3410"), UserName = "test", Email = "test@test.com" });
+        context.SaveChanges();
+    }
 }
 
 

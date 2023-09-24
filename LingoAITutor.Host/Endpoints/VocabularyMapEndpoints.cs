@@ -17,11 +17,11 @@ namespace LingoAITutor.Host.Endpoints
 
         private static async Task<IResult> GetVocabulary(LingoDbContext dbcontext)
         {
-            var userId = Guid.Empty;
+            var userId = VocabularyTrainingEndpoints.UserId;
 
             var words = await dbcontext.Words.ToArrayAsync();
             var progress = await dbcontext.UserWordProgresses.Where(p => p.User.Id == userId).ToDictionaryAsync(p=> p.WordID);            
-            var result = words.Select(w => MapToWordProgress(w, progress.GetValueOrDefault(w.Id)));            
+            var result = words.Select(w => MapToWordProgress(w, progress.GetValueOrDefault(w.Id))).ToArray();            
             return Results.Ok(result);
         }
 
