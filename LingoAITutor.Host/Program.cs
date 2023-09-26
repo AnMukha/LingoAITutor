@@ -1,5 +1,8 @@
 using LingoAITutor.Host.Endpoints;
+using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
+using LingoAITutor.Host.Services;
+using LingoAITutor.Host.Services.Common;
 using LingoAITutor.Host.Utilities;
 using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
@@ -17,6 +20,10 @@ builder.Services.AddDbContext<LingoDbContext>(options =>
 
 builder.Services.AddTransient<VocabluaryImport>();
 builder.Services.AddSingleton(new OpenAIAPI("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"));
+builder.Services.AddTransient<TranslationExerciseAnaliser>();
+builder.Services.AddTransient<TranslationExerciseGenerator>();
+builder.Services.AddTransient<VocabularyMapGenerator>();
+builder.Services.AddSingleton<AllWords>();
 
 builder.Services.AddCors();
 
@@ -76,11 +83,40 @@ static void SeedDatabase(IServiceScope scope)
         var path = Path.Combine(env.ContentRootPath, "Txt");
         vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
     }
+    context.Words.Where(w => SpecialWords.GrammarWords.Contains(w.Text)).ExecuteDelete();
     if(!context.Users.Any())
     {
-        context.Users.Add(new LingoAITutor.Host.Entities.User() { Id = new Guid("5944D4A0-0D55-402B-B247-42E6765B3410"), UserName = "test", Email = "test@test.com" });
-        context.SaveChanges();
+        context.Users.Add(new User() { Id = TranslationExerciseAnaliser.UserId, UserName = "test", Email = "test@test.com" });        
     }
+    if (!context.UserProgresses.Any())
+    {
+        context.UserProgresses.Add(new UserProgress() { UserId = TranslationExerciseAnaliser.UserId });
+        context.RangeProgresses.Add(new RangeProgress()
+        {
+            Id = Guid.NewGuid(),
+            UserProgressId = TranslationExerciseAnaliser.UserId,
+            StartPosition = 0,
+            WordsCount = 500
+        });
+        context.RangeProgresses.Add(new RangeProgress()
+        {
+            Id = Guid.NewGuid(),
+            UserProgressId = TranslationExerciseAnaliser.UserId,
+            StartPosition = 500,
+            WordsCount = 500
+        });
+        for (var i = 1; i < context.Words.Count() / 1000 + 1; i++)
+        {
+            context.RangeProgresses.Add(new RangeProgress()
+            {
+                Id = Guid.NewGuid(),
+                UserProgressId = TranslationExerciseAnaliser.UserId,
+                StartPosition = i * 1000,
+                WordsCount = 1000
+            });
+        };
+    }
+    context.SaveChanges();
 }
 
 

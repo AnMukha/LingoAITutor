@@ -1,7 +1,4 @@
-﻿using LingoAITutor.Host.Dto;
-using LingoAITutor.Host.Entities;
-using LingoAITutor.Host.Infrastructure;
-using Microsoft.EntityFrameworkCore;
+﻿using LingoAITutor.Host.Services;
 
 namespace LingoAITutor.Host.Endpoints
 {    
@@ -15,25 +12,9 @@ namespace LingoAITutor.Host.Endpoints
             });
         }
 
-        private static async Task<IResult> GetVocabulary(LingoDbContext dbcontext)
+        private static async Task<IResult> GetVocabulary(VocabularyMapGenerator map)
         {
-            var userId = VocabularyTrainingEndpoints.UserId;
-
-            var words = await dbcontext.Words.ToArrayAsync();
-            var progress = await dbcontext.UserWordProgresses.Where(p => p.User.Id == userId).ToDictionaryAsync(p=> p.WordID);            
-            var result = words.Select(w => MapToWordProgress(w, progress.GetValueOrDefault(w.Id))).ToArray();            
-            return Results.Ok(result);
-        }
-
-        private static WordProgressDto MapToWordProgress(Word word, UserWordProgress? progress)
-        {
-            return new WordProgressDto()
-            {
-                Progress = progress?.MasteryLevel ?? 0,
-                Wrd = word.Text,                
-                X = word.XOnMap,
-                Y = word.YOnMap
-            };
+            return Results.Ok(await map.GetMap());
         }
     }
 }
