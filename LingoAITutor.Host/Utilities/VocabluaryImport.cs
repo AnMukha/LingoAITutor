@@ -1,5 +1,6 @@
 ﻿using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
+using LingoAITutor.Host.Services;
 
 namespace LingoAITutor.Host.Utilities
 {
@@ -30,10 +31,10 @@ namespace LingoAITutor.Host.Utilities
             }
 
             var wordsFromFile3 = DistinctKeepingOrder(File.ReadAllLines(pathToFile3));
-            wordsFromFile3 = ExcludeForms(wordsFromFile3);
+            // wordsFromFile3 = ExcludeForms(wordsFromFile3);
             foreach (var word in wordsFromFile3)
             {
-                if (!processedWords.Contains(word))
+                if (!processedWords.Contains(word) && !processedWords.Any(w => TranslationExerciseAnaliser.IsSameWord(word, w)))
                 {
                     processedWords.Add(word);
                 }

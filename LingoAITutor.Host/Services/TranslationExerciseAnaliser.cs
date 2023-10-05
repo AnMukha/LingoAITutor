@@ -63,7 +63,7 @@ namespace LingoAITutor.Host.Services
             var (badMatchig, correctly, incorrectly) = AnalyzeUsedWords(answer.AnswerText!, fixedPhrase);
             if (!badMatchig)
             {
-                await UpdateWordsProgress(correctly, incorrectly, answer.Word);
+                await UpdateWordsProgress(correctly, incorrectly, answer.Word!, fixedPhrase);
                 if (answer.Strategy == NextWordStrategy.VocabularyEstimation || answer.Strategy == NextWordStrategy.FromTheBestRange)
                 {
                     var successUsing = await GetMainWordCorrectUse(answer, fixedPhrase);
@@ -71,6 +71,8 @@ namespace LingoAITutor.Host.Services
                     {
                         var num = await IncreaseVocabularyEstimationNumber();
                         await SaveEstimationResult(answer.Word!, num, successUsing.Value);
+                        if (num % 10 == 0)
+                            await RecalculateVocabularyEstimation(num);
                     }
                 }
             }
@@ -79,6 +81,24 @@ namespace LingoAITutor.Host.Services
                 FixedPhrase = fixedPhrase,
                 Feedback = explonations
             };
+        }
+
+        private async Task RecalculateVocabularyEstimation(int num)
+        {
+            return;
+            var estimatedRecently = await _dbContext.UserWordProgresses.Where(up =>
+                                    up.UserID == UserId &&
+                                    up.EstimationExerciseNumber != null &&
+                                    up.EstimationExerciseNumber > num - 200).AsNoTracking().ToArrayAsync();
+            // вычислить процент известных слов для каждой зоны
+            var ranges = await _dbContext.RangeProgresses.Where(rp => rp.UserProgressId == UserId).ToArrayAsync();
+            foreach(var r in ranges)
+            {
+                var inRange = estimatedRecently.Where(er => er.Word.FrequencyRank > r.StartPosition && er.Word.FrequencyRank < r.StartPosition + r.WordsCount).ToArray();
+                if (inRange.Length > 10)
+                    r.Progress = inRange.Count(wp => wp.EstimationExerciseResult == true) / (double)inRange.Length;
+            }
+            _dbContext.SaveChanges();
         }
 
         private async Task SaveEstimationResult(string wordText, int estimationNumber, bool successUsing)
@@ -129,7 +149,7 @@ namespace LingoAITutor.Host.Services
             )}
             });
             var resultText = result.Choices[0].Message.Content;
-            resultText = resultText.Remove('"');
+            resultText = resultText.Replace("\"", "");
             if (Regex.Split(resultText, @"\W+").Length == 1)
             {
                 // соответствующее слово переведено не верно
@@ -139,7 +159,7 @@ namespace LingoAITutor.Host.Services
             return null;
         }
 
-        private async Task UpdateWordsProgress(string[]? correctly, string[]? incorrectly, string exerciseWord)
+        private async Task UpdateWordsProgress(string[]? correctly, string[]? incorrectly, string exerciseWord, string fixedSentence)
         {
             var updates = (correctly ?? Array.Empty<string>()).Select(w => (word: w, correct: true))
                             .Concat((incorrectly ?? Array.Empty<string>()).Select(w => (word: w, correct: false)));
@@ -162,13 +182,15 @@ namespace LingoAITutor.Host.Services
                     if (correct)
                     {
                         progress.CorrectUses++;
-                        if (IsSameWord(word, exerciseWord))
-                            progress.FailedToUseFlag = false;
+                        //if (IsSameWord(word, exerciseWord))
+                        progress.FailedToUseFlag = false;
                     }
                     else
                     {
                         progress.NonUses++;
-                        progress.FailedToUseFlag = true;
+                        if (progress.NonUses >= progress.CorrectUses)
+                            progress.FailedToUseFlag = true;
+                        progress.FailedToUseSencence = fixedSentence;
                     }                    
                 }                
             }            
@@ -215,10 +237,10 @@ namespace LingoAITutor.Host.Services
         }
 
         private bool BadMatching(string[] answerWords, string[] fixedWords)
-        {
+        {            
             if (answerWords.Where(w => fixedWords.Any(fw => IsSameWord(w, fw))).Count() / (double)fixedWords.Length < 0.5)
                 return true;
-            if (answerWords.Where(NotGrammarWord).Count() / (double)fixedWords.Where(NotGrammarWord).Count() < 0.8)
+            if (answerWords.Where(NotGrammarWord).Count() / (double)fixedWords.Where(NotGrammarWord).Count() < 0.75)
                 return true;
             return false;
         }
@@ -229,12 +251,14 @@ namespace LingoAITutor.Host.Services
             return !SpecialWords.GrammarWords.Contains(w.ToLower());
         }
 
-        private static bool IsSameWord(string w1, string w2)
+        public static bool IsSameWord(string w1, string w2)
         {
             var wl1 = w1.ToLower();
             var wl2 = w2.ToLower();
             if (wl1 == wl2) return true;
-            return NormalizeWord(wl1) == NormalizeWord(wl2);
+            var n1 = NormalizeWord(wl1);
+            var n2 = NormalizeWord(wl2);
+            return (n1 == n2 || n1 + "e" == n2 || n1 == n2 + "e");
             
             /*return w1 ==
             if (w1 == w2) return true;
@@ -260,11 +284,11 @@ namespace LingoAITutor.Host.Services
 
         private static string NormalizeWord(string w)
         {
+            if (w.EndsWith("ies")) return w[..^3] + "y";
             if (w.EndsWith("es")) return w[..^2];
-            if (w.EndsWith("s")) return w[..^1];
-            if (w.EndsWith("ed")) return w[..^2];
-            if (w.EndsWith("d")) return w[..^1];
-            if (w.EndsWith("ies")) return w[..^3]+"y";
+            if (w.EndsWith("s") && w.Length>1 && w[w.Length - 2] != 's' && w[w.Length - 2] != 'h' && w[w.Length - 2] != 'x') return w[..^1];
+            if (w.EndsWith("ed")) return w[..^2];            
+            
             if (w.EndsWith("ing"))
             {
                 if (w.Length > 4 && w[w.Length-4] == w[w.Length-5])

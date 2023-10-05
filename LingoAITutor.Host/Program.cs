@@ -5,14 +5,45 @@ using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.Common;
 using LingoAITutor.Host.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using OpenAI_API;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "JWTToken_Auth_API",
+        Version = "v1"
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        {
+            new OpenApiSecurityScheme {
+                Reference = new OpenApiReference {
+                    Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<LingoDbContext>(options =>
@@ -22,10 +53,25 @@ builder.Services.AddTransient<VocabluaryImport>();
 builder.Services.AddSingleton(new OpenAIAPI("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"));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
 builder.Services.AddTransient<TranslationExerciseGenerator>();
+builder.Services.AddTransient<VocabularySizeCalculation>();
 builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
 
 builder.Services.AddCors();
+
+builder.Services.AddAuthentication().AddJwtBearer(options => {
+    //options.Audience = "https://localhost:5001/";
+    //options.Authority = "https://localhost:5000/";
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("SECRET_KEY1SECRET_KEY1SECRET_KEY1SECRET_KEY1")),
+        ValidateIssuer = false, // In a more advanced setup, this would be true.
+        ValidateAudience = false, // Likewise here.
+    };    
+    options.MetadataAddress = string.Empty;
+});
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -34,8 +80,12 @@ app.UseCors(builder =>
               .AllowAnyMethod()
               .AllowAnyHeader());
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 VocabularyMapEndpoints.AddEndpoints(app);
 VocabularyTrainingEndpoints.AddEndpoints(app);
+Auth.AddEndpoints(app);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -84,7 +134,8 @@ static void SeedDatabase(IServiceScope scope)
         vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
     }
     context.Words.Where(w => SpecialWords.GrammarWords.Contains(w.Text)).ExecuteDelete();
-    if(!context.Users.Any())
+
+    if (!context.Users.Any())
     {
         context.Users.Add(new User() { Id = TranslationExerciseAnaliser.UserId, UserName = "test", Email = "test@test.com" });        
     }
@@ -119,9 +170,7 @@ static void SeedDatabase(IServiceScope scope)
     context.SaveChanges();
 }
 
-
 internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
-

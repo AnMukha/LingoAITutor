@@ -27,10 +27,11 @@ namespace LingoAITutor.Host.Services
         {
             return new WordProgressDto()
             {
-                Progress = progress?.CorrectUses ?? 0,
                 Wrd = word.Text,
                 X = word.XOnMap,
-                Y = word.YOnMap
+                Y = word.YOnMap,
+                CorrectUses = progress?.CorrectUses ?? 0,
+                NonUses = progress?.NonUses ?? 0,                
             };
         }
 

@@ -12,6 +12,7 @@ namespace LingoAITutor.Host.Entities
         public int ReplacedBySynonyms { get; set; }
         public int NonUses { get; set; }
         public bool FailedToUseFlag { get; set; }
+        public string? FailedToUseSencence { get; set; }
         public DateTime? WorkOutStart { get; set; }
         public int? EstimationExerciseNumber { get; set; }
         public bool? EstimationExerciseResult { get; set; }

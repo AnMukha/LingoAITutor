@@ -25,68 +25,97 @@ namespace LingoAITutor.Host.Services
 
         public async Task<WordTranslateExerciseDto> GetNextExercise()
         {
-            var (word, strategy) = await FindNextWordToTrain();
-            var excercise = await GenerateExerciseForWord(word.Text, strategy);            
+            var (word, up, strategy) = await FindNextWordToTrain();
+            var excercise = await GenerateExerciseForWord(word, up, strategy);            
             return excercise;
         }
 
         private NextWordStrategy ChooseStrategy(int num)
-        {            
+        {
             if (num % 4 == 0)
-                return NextWordStrategy.FromTheBestRange;
-            if (num % 4 == 1)
-                return NextWordStrategy.VocabularyEstimation;
-            if (num % 4 == 2)
                 return NextWordStrategy.FromFailedWords;
+            if (num % 4 == 1)
+                return NextWordStrategy.FromTheBestRange;
+            if (num % 4 == 2)
+                return NextWordStrategy.VocabularyEstimation;            
             return NextWordStrategy.CleanUp;
         }
 
-        private async Task<WordTranslateExerciseDto> GenerateExerciseForWord(string word, NextWordStrategy strategy)
+        string[] Subjects = new string[]
         {
-            var result = await _openAPI.Chat.CreateChatCompletionAsync(new ChatRequest()
+            "Travel", "Home", "Economy", "Hobby", "Rest", "Work", "Science", "Technologies", "Studying", 
+            "Family", "Pets", "News", "Policy", "Whether", "Education", "History", "Money"
+        };
+
+
+        private async Task<WordTranslateExerciseDto> GenerateExerciseForWord(Word word, UserWordProgress up, NextWordStrategy strategy)
+        {
+            var subject = Subjects[_random.Next(Subjects.Length)];
+            var sbj = _random.Next(1000) > 750? $" on the subject \"{subject}\"" :"";
+            int attempts = 0;
+            while (attempts < 3)
             {
-                Model = Model.ChatGPTTurbo,
-                Temperature = 1,
-                MaxTokens = 100,
-                Messages = new ChatMessage[] {
-            new ChatMessage(ChatMessageRole.User, $"I need exercise to improve my English vocabulary. Create an English sentence with the word \"{word}\", translate it to Russian. As output I want only two this sentence in separate lines without any another notices.")
+                string gptTask;
+                if (strategy != NextWordStrategy.FromFailedWords || up == null)
+                { 
+                    gptTask = $"I need an exercise for A2 level of English to improve my English vocabulary{sbj}. Create one English sentence with the word \"{word.Text}\", translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
+                }
+                else
+                {
+                    gptTask = $"I need an exercise for A2 level of English to improve my English vocabulary{sbj}. I failed to use word \"{word.Text}\" in this sentence: \"{up.FailedToUseSencence}\". Create another English sentence (not same, absolutely different!) with the word \"{word.Text}\" used in a similar sense, translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
+                }
+                var result = await _openAPI.Chat.CreateChatCompletionAsync(new ChatRequest()
+                {
+                    Model = Model.GPT4,
+                    Temperature = 1,
+                    MaxTokens = 100,
+                    Messages = new ChatMessage[] {
+                    new ChatMessage(ChatMessageRole.User, gptTask)}
+                });
+
+                var resultText = result.Choices[0].Message.Content;
+
+                var exercise = new WordTranslateExerciseDto()
+                {
+                    Word = word.Text,
+                    NativePhrase = resultText.Split('\n').LastOrDefault(),
+                    OriginalPhrase = resultText.Split('\n').FirstOrDefault(),
+                    Strategy = strategy
+                };
+                if (!string.IsNullOrWhiteSpace(exercise.NativePhrase) && !exercise.NativePhrase.Any(l => l > 'a' && l < 'z'))
+                    return exercise;
             }
-            });
-
-            var resultText = result.Choices[0].Message.Content;
-
-            return new WordTranslateExerciseDto()
-            {
-                Word = word,
-                NativePhrase = resultText.Split('\n').LastOrDefault(),
-                OriginalPhrase = resultText.Split('\n').FirstOrDefault(),
-                Strategy = strategy
-            };
+            throw new Exception("Failed to create exercise.");
         }
 
-        private async Task<(Word, NextWordStrategy)> FindNextWordToTrain()
+        private async Task<(Word, UserWordProgress?, NextWordStrategy)> FindNextWordToTrain()
         {
             var up = await _dbContext.UserProgresses.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == TranslationExerciseAnaliser.UserId);
-            var num = up.ExerciseNumber;
+            var num = 0;//up.ExerciseNumber;
+            if (up?.ExerciseNumber % 5 == 0)
+                num = 1;                    
             while (true)
             {
                 var strategy = ChooseStrategy(num);
                 var result = await FindNextWordToTrain(strategy);
-                if (result != null)
-                    return (result, strategy);
+                if (result.word != null)
+                    return (result.word, result.up, strategy);
                 num++;
             }            
         }
 
-        private async Task<Word?> FindNextWordToTrain(NextWordStrategy strategy)
+        private async Task<(Word? word, UserWordProgress? up)> FindNextWordToTrain(NextWordStrategy strategy)
         {            
             if (strategy == NextWordStrategy.FromFailedWords)
-                return await ChooseFromFailedWords();
+            {
+                var up = await ChooseFromFailedWords();
+                return (up?.Word, up);
+            }                
             if (strategy == NextWordStrategy.VocabularyEstimation)
-                return ChooseFromAllWords();
+                return (ChooseFromAllWords(), null);
             if (strategy == NextWordStrategy.FromTheBestRange)
-                return await ChooseFromTheBestRange();
-            return await CooseForCleanUp();
+                return (await ChooseFromTheBestRange(), null);
+            return (await CooseForCleanUp(), null);
         }
 
         private async Task<Word?> CooseForCleanUp()
@@ -104,9 +133,9 @@ namespace LingoAITutor.Host.Services
                                 .Where(rp => rp.UserProgressId == TranslationExerciseAnaliser.UserId)     
                                 .OrderBy(rp => rp.StartPosition)
                                 .AsNoTracking()
-                                .ToArrayAsync();            
+                                .ToArrayAsync();
             // first with poor progress or last
-            var chousen = progress.OrderBy(p => p.StartPosition).First(p => p.Progress == null || p.Progress < 0.5);
+            var chousen = progress.OrderBy(p => p.StartPosition).ToArray()[3];//.First(p => p.Progress == null || p.Progress < 0.5);
             chousen ??= progress.Last();
             var position = _random.Next(chousen.WordsCount) + chousen.StartPosition;
             return _words.GetWords()[position]; 
@@ -117,12 +146,12 @@ namespace LingoAITutor.Host.Services
             return _words.GetWords()[_random.Next(_words.GetWords().Count)];
         }
 
-        private async Task<Word?> ChooseFromFailedWords()
+        private async Task<UserWordProgress?> ChooseFromFailedWords()
         {
             // the most common word from the list of failed
             var userProgress = await _dbContext.UserWordProgresses.Where(up => up.UserID == TranslationExerciseAnaliser.UserId && up.FailedToUseFlag)
                                 .Include(up => up.Word).OrderBy(up => up.Word.FrequencyRank).FirstOrDefaultAsync();
-            return userProgress?.Word;
+            return userProgress;
 
         }
     }
