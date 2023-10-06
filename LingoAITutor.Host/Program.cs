@@ -60,8 +60,6 @@ builder.Services.AddSingleton<AllWords>();
 builder.Services.AddCors();
 
 builder.Services.AddAuthentication().AddJwtBearer(options => {
-    //options.Audience = "https://localhost:5001/";
-    //options.Authority = "https://localhost:5000/";
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
