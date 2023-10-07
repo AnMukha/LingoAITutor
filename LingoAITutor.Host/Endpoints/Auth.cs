@@ -1,4 +1,9 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using LingoAITutor.Host.Dto;
+using LingoAITutor.Host.Entities;
+using LingoAITutor.Host.Infrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -10,29 +15,62 @@ namespace LingoAITutor.Host.Endpoints
 
         public static void AddEndpoints(WebApplication application)
         {
-            application.MapGet("api/login", Login).WithOpenApi(operation => new(operation)
+            application.MapPost("api/login", Login).WithOpenApi(operation => new(operation)
             {
                 Summary = "Login",
             });            
         }
 
-        private static IResult Login(string userName, string password)
+        private static async Task<IResult> Login(LingoDbContext context, LoginDto loginData)
         {
+            //ClaimsPrincipal cl, 
+            //var user = cl.FindFirst(claim => claim.Type == "id");
+            //var userId = Guid.Parse(user!.Properties["id"]);
+
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == loginData.UserName);
+            if (user == null)
+            {
+                return Results.Ok(new LoginResponse()
+                {
+                    Message = "User not found",
+                    Token = null,
+                    UserName = null
+                });
+            }
+
+            var hasher = new PasswordHasher<User>();
+            
+            //var passwH = hasher.HashPassword(user, "ppp");
+            //user.PasswordHash = passwH;
+            //context.SaveChanges();
+
+            var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, loginData.Password);
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                return Results.Ok(new LoginResponse()
+                {
+                    Message = "Wrong password",
+                    Token = null,
+                    UserName = null
+                });
+            }
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes("SECRET_KEY1SECRET_KEY1SECRET_KEY1SECRET_KEY1");
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim("id", userName) }),
+                Subject = new ClaimsIdentity(new[] { new Claim("id", loginData.UserName) }),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return Results.Ok(new
+            return Results.Ok(new LoginResponse()
             {
-                token = tokenHandler.WriteToken(token)
+                Message = null,
+                Token = tokenHandler.WriteToken(token),
+                UserName = loginData.UserName
             });
-
         }
 
     }

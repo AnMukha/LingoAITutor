@@ -10,20 +10,18 @@ namespace LingoAITutor.Host.Endpoints
     {        
         public static void AddEndpoints(WebApplication application)
         {
-            application.MapGet("api/voc-train-next",  GetNextExercise).WithOpenApi(operation => new(operation)
+            application.MapGet("api/voc-train-next",  GetNextExercise).RequireAuthorization().WithOpenApi(operation => new(operation)
             {
                 Summary = "Get next excercise for vocabulary train",
             });
-            application.MapPost("api/voc-train-submit", SubmitAnswer).WithOpenApi(operation => new(operation)
+            application.MapPost("api/voc-train-submit", SubmitAnswer).RequireAuthorization().WithOpenApi(operation => new(operation)
             {
                 Summary = "Submit excercise answer for vocabulary train",
             });
         }
 
-        private async static Task<IResult> GetNextExercise(ClaimsPrincipal cl, TranslationExerciseGenerator generator)
+        private async static Task<IResult> GetNextExercise(TranslationExerciseGenerator generator)
         {
-            //var user = cl.FindFirst(claim => claim.Type == "id");
-            //var userId = Guid.Parse(user.Properties["id"]);
             return Results.Ok(await generator.GetNextExercise());
         }
 
