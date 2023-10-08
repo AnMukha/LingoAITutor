@@ -14,16 +14,16 @@ namespace LingoAITutor.Host.Services
             _words = words;
         }
 
-        public async Task<VocabularySizeInfoDto> CalculateVocabularySize()
+        public async Task<VocabularySizeInfoDto> CalculateVocabularySize(Guid userId)
         {            
-            var ranges = await _dbContext.RangeProgresses.Where(rp => rp.UserProgressId == TranslationExerciseAnaliser.UserId).AsNoTracking().ToArrayAsync();
+            var ranges = await _dbContext.RangeProgresses.Where(rp => rp.UserProgressId == userId).AsNoTracking().ToArrayAsync();
             var estimated = ranges.Where(r => r.Progress.HasValue)
                                             .Select(r => r.Progress!.Value * _words.GetCountInRange(r.StartPosition, r.WordsCount))
                                             .Sum();
-            var usedCount = await _dbContext.UserWordProgresses.Where(up => up.UserID == TranslationExerciseAnaliser.UserId).CountAsync();
-            var usedCorrectly = await _dbContext.UserWordProgresses.Where(up => up.UserID == TranslationExerciseAnaliser.UserId &&
+            var usedCount = await _dbContext.UserWordProgresses.Where(up => up.UserID == userId).CountAsync();
+            var usedCorrectly = await _dbContext.UserWordProgresses.Where(up => up.UserID == userId &&
                                 up.NonUses < up.CorrectUses).CountAsync();
-            var userProgress = await _dbContext.UserProgresses.FirstAsync(u => u.UserId == TranslationExerciseAnaliser.UserId);
+            var userProgress = await _dbContext.UserProgresses.FirstAsync(u => u.UserId == userId);
             return new VocabularySizeInfoDto()
             {
                 EstimatedVocabulary = (int)Math.Round(estimated),

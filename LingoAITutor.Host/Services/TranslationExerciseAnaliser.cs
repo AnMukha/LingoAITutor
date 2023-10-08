@@ -1,5 +1,6 @@
 ﻿using Azure;
 using LingoAITutor.Host.Dto;
+using LingoAITutor.Host.Endpoints;
 using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Entities.Enums;
 using LingoAITutor.Host.Infrastructure;
@@ -19,15 +20,14 @@ namespace LingoAITutor.Host.Services
         private readonly LingoDbContext _dbContext;
         private readonly OpenAIAPI _openAPI;
         private readonly AllWords _allWords;
+        private readonly Guid _userId;        
 
-
-        public readonly static Guid UserId = new("5944D4A0-0D55-402B-B247-42E6765B3410");
-
-        public TranslationExerciseAnaliser(LingoDbContext dbContext, OpenAIAPI api, AllWords allWords)
+        public TranslationExerciseAnaliser(LingoDbContext dbContext, UserIdHepler userIdHelper,  OpenAIAPI api, AllWords allWords)
         {
             _openAPI = api;
             _dbContext = dbContext;
             _allWords = allWords;
+            _userId = userIdHelper.GetUserId();
         }
 
         public async Task<WordTranslateFeedback> AnalyseAnswer(AnswerDto answer)
@@ -87,11 +87,11 @@ namespace LingoAITutor.Host.Services
         {
             return;
             var estimatedRecently = await _dbContext.UserWordProgresses.Where(up =>
-                                    up.UserID == UserId &&
+                                    up.UserID == _userId &&
                                     up.EstimationExerciseNumber != null &&
                                     up.EstimationExerciseNumber > num - 200).AsNoTracking().ToArrayAsync();
             // вычислить процент известных слов для каждой зоны
-            var ranges = await _dbContext.RangeProgresses.Where(rp => rp.UserProgressId == UserId).ToArrayAsync();
+            var ranges = await _dbContext.RangeProgresses.Where(rp => rp.UserProgressId == _userId).ToArrayAsync();
             foreach(var r in ranges)
             {
                 var inRange = estimatedRecently.Where(er => er.Word.FrequencyRank > r.StartPosition && er.Word.FrequencyRank < r.StartPosition + r.WordsCount).ToArray();
@@ -107,13 +107,13 @@ namespace LingoAITutor.Host.Services
             if (word == null)
                 return;
             var wordProgress = await _dbContext.UserWordProgresses.FirstOrDefaultAsync(
-                            w => w.UserID == TranslationExerciseAnaliser.UserId && w.WordID == word.Id);
+                            w => w.UserID == _userId && w.WordID == word.Id);
             if (wordProgress == null)
             {                
                 wordProgress = new()
                 {
                     Id = Guid.NewGuid(),
-                    UserID = UserId,
+                    UserID = _userId,
                     WordID = word.Id
                 };
                 _dbContext.UserWordProgresses.Add(wordProgress);
@@ -168,13 +168,13 @@ namespace LingoAITutor.Host.Services
                 var wordId = FindWordId(word);
                 if (wordId != null)
                 {
-                    var progress = await _dbContext.UserWordProgresses.FirstOrDefaultAsync(p => p.WordID == wordId.Value && p.UserID == UserId);
+                    var progress = await _dbContext.UserWordProgresses.FirstOrDefaultAsync(p => p.WordID == wordId.Value && p.UserID == _userId);
                     if (progress == null)
                     {
                         progress = new()
                         {
                             Id = Guid.NewGuid(),
-                            UserID = UserId,
+                            UserID = _userId,
                             WordID = wordId.Value
                         };
                         _dbContext.UserWordProgresses.Add(progress);
@@ -199,14 +199,18 @@ namespace LingoAITutor.Host.Services
 
         private async Task IncreaseExerciseNumber()
         {
-            var progress = await _dbContext.UserProgresses.FirstOrDefaultAsync(r => r.UserId == TranslationExerciseAnaliser.UserId);
+            var progress = await _dbContext.UserProgresses.FirstOrDefaultAsync(r => r.UserId == _userId);
+            if (progress == null)
+                return;
             progress!.ExerciseNumber++;
             await _dbContext.SaveChangesAsync();
         }
 
         private async Task<int> IncreaseVocabularyEstimationNumber()
         {
-            var progress = await _dbContext.UserProgresses.FirstOrDefaultAsync(r => r.UserId == TranslationExerciseAnaliser.UserId);
+            var progress = await _dbContext.UserProgresses.FirstOrDefaultAsync(r => r.UserId == _userId);
+            if (progress == null)
+                return 0;
             progress!.EstimationNumber = progress.EstimationNumber + 1;
             _dbContext.SaveChanges();
             return progress!.EstimationNumber;

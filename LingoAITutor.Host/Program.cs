@@ -5,6 +5,7 @@ using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.Common;
 using LingoAITutor.Host.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -46,9 +47,15 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<LingoDbContext>(options =>
-    options.UseSqlServer(connectionString));
+//builder.Services.AddDbContext<LingoDbContext>(options =>
+    //options.UseSqlServer(connectionString));
 
+builder.Services.AddDbContext<LingoDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddTransient<UserIdHepler>();
 builder.Services.AddTransient<VocabluaryImport>();
 builder.Services.AddSingleton(new OpenAIAPI("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"));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
@@ -122,8 +129,11 @@ app.MapGet("/weatherforecast", () =>
 app.Run();
 
 static void SeedDatabase(IServiceScope scope)
-{
+{    
     var context = scope.ServiceProvider.GetRequiredService<LingoDbContext>();
+
+    context.Database.Migrate();
+
     if (!context.Words.Any())
     {
         var vocabluaryImport = scope.ServiceProvider.GetRequiredService<VocabluaryImport>();
@@ -133,24 +143,42 @@ static void SeedDatabase(IServiceScope scope)
     }
     context.Words.Where(w => SpecialWords.GrammarWords.Contains(w.Text)).ExecuteDelete();
 
-    if (!context.Users.Any())
-    {
-        context.Users.Add(new User() { Id = TranslationExerciseAnaliser.UserId, UserName = "test", Email = "test@test.com" });        
+    if (!context.Users.Any(u => u.UserName == "ilka"))
+    {        
+        context.Users.Add(new User()
+        {
+            Id = Guid.NewGuid(),
+            UserName = "ilka",
+            Email = "ilka@test.com",
+            PasswordHash = "AQAAAAIAAYagAAAAEK0CjBl+Cyd8TCixgR0noN4PRLxq2u7lLZsDUJVGRE68NO9HerDnYY12X4BrI6mxQA=="
+        });
     }
-    if (!context.UserProgresses.Any())
+    if (!context.Users.Any(u => u.UserName == "mukha"))
     {
-        context.UserProgresses.Add(new UserProgress() { UserId = TranslationExerciseAnaliser.UserId });
-        context.RangeProgresses.Add(new RangeProgress()
+        context.Users.Add(new User()
+        {
+            Id = Guid.NewGuid(),
+            UserName = "mukha",
+            Email = "mukha@test.com",
+            PasswordHash = "AQAAAAIAAYagAAAAEK0CjBl+Cyd8TCixgR0noN4PRLxq2u7lLZsDUJVGRE68NO9HerDnYY12X4BrI6mxQA=="
+        });
+    }
+
+    //if (!context.UserProgresses.Any())
+    {
+        //context.UserProgresses.Add(new UserProgress() { UserId = TranslationExerciseAnaliser.UserId });
+        /*context.RangeProgresses.Add(new RangeProgress()
         {
             Id = Guid.NewGuid(),
             UserProgressId = TranslationExerciseAnaliser.UserId,
             StartPosition = 0,
             WordsCount = 500
         });
+        var userId = Guid.NewGuid();
         context.RangeProgresses.Add(new RangeProgress()
         {
-            Id = Guid.NewGuid(),
-            UserProgressId = TranslationExerciseAnaliser.UserId,
+            Id = userId,
+            UserProgressId = userId,
             StartPosition = 500,
             WordsCount = 500
         });
@@ -163,7 +191,7 @@ static void SeedDatabase(IServiceScope scope)
                 StartPosition = i * 1000,
                 WordsCount = 1000
             });
-        };
+        };*/
     }
     context.SaveChanges();
 }

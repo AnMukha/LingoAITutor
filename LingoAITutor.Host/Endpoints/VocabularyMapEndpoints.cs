@@ -1,4 +1,6 @@
-﻿using LingoAITutor.Host.Services;
+﻿using LingoAITutor.Host.Entities;
+using LingoAITutor.Host.Services;
+using System.Security.Claims;
 
 namespace LingoAITutor.Host.Endpoints
 {    
@@ -16,14 +18,14 @@ namespace LingoAITutor.Host.Endpoints
             });
         }
 
-        private static async Task<IResult> GetVocabulary(VocabularyMapGenerator map)
+        private static async Task<IResult> GetVocabulary(VocabularyMapGenerator map, UserIdHepler userIdHelper)
         {
-            return Results.Ok(await map.GetMap());
+            return Results.Ok(await map.GetMap(userIdHelper.GetUserId()));
         }
 
-        private static async Task<IResult> GetVocabularySize(VocabularySizeCalculation vocCalc)
+        private static async Task<IResult> GetVocabularySize(UserIdHepler uId, VocabularySizeCalculation vocCalc)
         {
-            return Results.Ok(await vocCalc.CalculateVocabularySize());
+            return Results.Ok(await vocCalc.CalculateVocabularySize(uId.GetUserId()));
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using LingoAITutor.Host.Dto;
+using LingoAITutor.Host.Endpoints;
 using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Entities.Enums;
 using LingoAITutor.Host.Infrastructure;
@@ -15,12 +16,14 @@ namespace LingoAITutor.Host.Services
         private readonly OpenAIAPI _openAPI;
         private static readonly Random _random = new();
         private readonly AllWords _words;
+        private readonly Guid _userId;
 
-        public TranslationExerciseGenerator(LingoDbContext dbContext, OpenAIAPI api, AllWords words)
+        public TranslationExerciseGenerator(LingoDbContext dbContext, UserIdHepler userIdHelper, OpenAIAPI api, AllWords words)
         {
             _openAPI = api;
             _dbContext = dbContext;
             _words = words;
+            _userId = userIdHelper.GetUserId();
         }
 
         public async Task<WordTranslateExerciseDto> GetNextExercise()
@@ -90,7 +93,7 @@ namespace LingoAITutor.Host.Services
 
         private async Task<(Word, UserWordProgress?, NextWordStrategy)> FindNextWordToTrain()
         {
-            var up = await _dbContext.UserProgresses.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == TranslationExerciseAnaliser.UserId);
+            var up = await _dbContext.UserProgresses.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == _userId);
             var num = 0;//up.ExerciseNumber;
             if (up?.ExerciseNumber % 5 == 0)
                 num = 1;                    
@@ -120,7 +123,7 @@ namespace LingoAITutor.Host.Services
 
         private async Task<Word?> CooseForCleanUp()
         {            
-            var wordProgress = await _dbContext.UserWordProgresses.Where(up => up.UserID == TranslationExerciseAnaliser.UserId
+            var wordProgress = await _dbContext.UserWordProgresses.Where(up => up.UserID == _userId
                                     && up.CorrectUses!= 0).ToDictionaryAsync(up=> up.WordID);
             var word =  _words.GetWords().Where(w => !wordProgress.ContainsKey(w.Id))
                                     .MinBy(w => w.FrequencyRank);
@@ -129,8 +132,10 @@ namespace LingoAITutor.Host.Services
 
         private async Task<Word?> ChooseFromTheBestRange()
         {
+            return _words.GetWords()[_random.Next(1000)];
+
             var progress = await _dbContext.RangeProgresses
-                                .Where(rp => rp.UserProgressId == TranslationExerciseAnaliser.UserId)     
+                                .Where(rp => rp.UserProgressId == _userId)     
                                 .OrderBy(rp => rp.StartPosition)
                                 .AsNoTracking()
                                 .ToArrayAsync();
@@ -149,7 +154,7 @@ namespace LingoAITutor.Host.Services
         private async Task<UserWordProgress?> ChooseFromFailedWords()
         {
             // the most common word from the list of failed
-            var userProgress = await _dbContext.UserWordProgresses.Where(up => up.UserID == TranslationExerciseAnaliser.UserId && up.FailedToUseFlag)
+            var userProgress = await _dbContext.UserWordProgresses.Where(up => up.UserID == _userId && up.FailedToUseFlag)
                                 .Include(up => up.Word).OrderBy(up => up.Word.FrequencyRank).FirstOrDefaultAsync();
             return userProgress;
 

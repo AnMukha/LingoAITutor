@@ -14,9 +14,8 @@ namespace LingoAITutor.Host.Services
             _dbContext = dbContext;
         }
 
-        public async Task<WordProgressDto[]> GetMap()
-        {
-            var userId = TranslationExerciseAnaliser.UserId;
+        public async Task<WordProgressDto[]> GetMap(Guid userId)
+        {            
             var words = await _dbContext.Words.ToArrayAsync();
             var progress = await _dbContext.UserWordProgresses.Where(p => p.User.Id == userId).ToDictionaryAsync(p => p.WordID);
             var result = words.Select(w => MapToWordProgress(w, progress.GetValueOrDefault(w.Id))).ToArray();
