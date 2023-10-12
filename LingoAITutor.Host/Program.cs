@@ -5,14 +5,18 @@ using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.Common;
 using LingoAITutor.Host.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenAI_API;
+using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration().CreateLogger();
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services));
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -81,7 +85,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseCors(builder =>
-       builder.WithOrigins("http://localhost:3000")
+       builder.WithOrigins("http://localhost:3000", "http://185.229.227.166")
               .AllowAnyMethod()
               .AllowAnyHeader());
 
@@ -111,8 +115,10 @@ var summaries = new[]
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/weatherforecast", () =>
 {
+
+    Log.Logger.Information("--------------------------- weatherforecast request");
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
@@ -132,13 +138,25 @@ static void SeedDatabase(IServiceScope scope)
 {    
     var context = scope.ServiceProvider.GetRequiredService<LingoDbContext>();
 
-    context.Database.Migrate();
+    try
+    {
+        context.Database.Migrate();
+    }
+    catch
+    {
+        Log.Logger.Error("Error on database migration attempt.");
+        return;
+    }
 
     if (!context.Words.Any())
     {
         var vocabluaryImport = scope.ServiceProvider.GetRequiredService<VocabluaryImport>();
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+#if DEBUG
         var path = Path.Combine(env.ContentRootPath, "Txt");
+#else
+        var path = "txt/";
+#endif
         vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
     }
     context.Words.Where(w => SpecialWords.GrammarWords.Contains(w.Text)).ExecuteDelete();
