@@ -17,8 +17,9 @@ namespace LingoAITutor.Host.Services
         public async Task<WordProgressDto[]> GetMap(Guid userId)
         {            
             var words = await _dbContext.Words.ToArrayAsync();
-            var progress = await _dbContext.UserWordProgresses.Where(p => p.User.Id == userId).ToDictionaryAsync(p => p.WordID);
-            var result = words.Select(w => MapToWordProgress(w, progress.GetValueOrDefault(w.Id))).ToArray();
+            var progress = await _dbContext.UserWordProgresses.Where(p => p.User.Id == userId).ToArrayAsync();
+            var progressDict = progress.DistinctBy(p => p.WordID).ToDictionary(p => p.WordID);
+            var result = words.Select(w => MapToWordProgress(w, progressDict.GetValueOrDefault(w.Id))).ToArray();
             return result;
         }
 
@@ -30,7 +31,8 @@ namespace LingoAITutor.Host.Services
                 X = word.XOnMap,
                 Y = word.YOnMap,
                 CorrectUses = progress?.CorrectUses ?? 0,
-                NonUses = progress?.NonUses ?? 0,                
+                NonUses = progress?.NonUses ?? 0,
+                Failed = progress?.FailedToUseFlag ?? false
             };
         }
 

@@ -20,14 +20,16 @@ namespace LingoAITutor.Host.Services
         private readonly LingoDbContext _dbContext;
         private readonly OpenAIAPI _openAPI;
         private readonly AllWords _allWords;
-        private readonly Guid _userId;        
+        private readonly Guid _userId;
+        private readonly IrregularVerbs _irregularVerbs;
 
-        public TranslationExerciseAnaliser(LingoDbContext dbContext, UserIdHepler userIdHelper,  OpenAIAPI api, AllWords allWords)
+        public TranslationExerciseAnaliser(LingoDbContext dbContext, UserIdHepler userIdHelper,  OpenAIAPI api, AllWords allWords, IrregularVerbs irregularVerbs)
         {
             _openAPI = api;
             _dbContext = dbContext;
             _allWords = allWords;
             _userId = userIdHelper.GetUserId();
+            _irregularVerbs = irregularVerbs;
         }
 
         public async Task<WordTranslateFeedback> AnalyseAnswer(AnswerDto answer)
@@ -39,7 +41,7 @@ namespace LingoAITutor.Host.Services
                 MaxTokens = 500,
                 Messages = new ChatMessage[] {
                     new ChatMessage(ChatMessageRole.User,
-                    "Correct grammar errors in my translation from Russian to English. Explain why you corrected the errors and what rules of grammar were broken. "+
+                    "Correct rude grammar errors in my translation from Russian to English. Explain why you corrected the errors and what rules of grammar were broken. "+
                     $"Original sentence: \"{answer.ExerciseText}\"/n"+
                     $"My translation: \"{answer.AnswerText}\"/n"+
                     "Write results in the format:"+
@@ -60,10 +62,11 @@ namespace LingoAITutor.Host.Services
 
             await IncreaseExerciseNumber();
 
-            var (badMatchig, correctly, incorrectly) = AnalyzeUsedWords(answer.AnswerText!, fixedPhrase);
+            var (badMatchig, correctly, incorrectly, answerWords) = AnalyzeUsedWords(answer.AnswerText!, fixedPhrase);
+            var original = ExtractOriginalWords(answer.OriginalPhrase!);
             if (!badMatchig)
             {
-                await UpdateWordsProgress(correctly, incorrectly, answer.Word!, fixedPhrase);
+                await UpdateWordsProgress(correctly, incorrectly, answerWords, original,  answer.Word!, fixedPhrase);
                 if (answer.Strategy == NextWordStrategy.VocabularyEstimation || answer.Strategy == NextWordStrategy.FromTheBestRange)
                 {
                     var successUsing = await GetMainWordCorrectUse(answer, fixedPhrase);
@@ -76,11 +79,31 @@ namespace LingoAITutor.Host.Services
                     }
                 }
             }
+            else
+            {
+                await MarkMainWordIfUsed(answerWords, answer.Word!);
+            }
             return new WordTranslateFeedback()
             {
                 FixedPhrase = fixedPhrase,
                 Feedback = explonations
             };
+        }
+
+        private async Task MarkMainWordIfUsed(string[] answerWords, string wordText)
+        {
+            var word = FindWord(wordText);
+            if (answerWords.Any(w => IsSameWord(w, wordText)))
+            {                
+                var progress = await GetOrCreateProgress(word!.Id);
+                progress.FailedToUseFlag = false;
+                _dbContext.SaveChanges();
+            }
+        }
+
+        private string[] ExtractOriginalWords(string originalPhrase)
+        {
+            return Regex.Split(originalPhrase, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
         }
 
         private async Task RecalculateVocabularyEstimation(int num)
@@ -125,8 +148,8 @@ namespace LingoAITutor.Host.Services
 
         private async Task<bool?> GetMainWordCorrectUse(AnswerDto answer, string fixedPhrase)
         {            
-            var answerWords = Regex.Split(answer.AnswerText!, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotGrammarWord(w)).ToArray();
-            var fixedWords = Regex.Split(fixedPhrase, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotGrammarWord(w)).ToArray();
+            var answerWords = Regex.Split(answer.AnswerText!, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
+            var fixedWords = Regex.Split(fixedPhrase, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
             // корректно: слово есть в переводе
             if (answerWords.Any(w => IsSameWord(w, answer.Word!)))
                 return true;
@@ -159,26 +182,16 @@ namespace LingoAITutor.Host.Services
             return null;
         }
 
-        private async Task UpdateWordsProgress(string[]? correctly, string[]? incorrectly, string exerciseWord, string fixedSentence)
+        private async Task UpdateWordsProgress(string[]? correctly, string[]? incorrectly, string[] answerWords, string[] original, string exerciseWordText, string fixedSentence)
         {
             var updates = (correctly ?? Array.Empty<string>()).Select(w => (word: w, correct: true))
                             .Concat((incorrectly ?? Array.Empty<string>()).Select(w => (word: w, correct: false)));
-            foreach (var (word, correct) in updates)
+            foreach (var (wordText, correct) in updates)
             {
-                var wordId = FindWordId(word);
-                if (wordId != null)
+                var word = FindWord(wordText);
+                if (word != null)
                 {
-                    var progress = await _dbContext.UserWordProgresses.FirstOrDefaultAsync(p => p.WordID == wordId.Value && p.UserID == _userId);
-                    if (progress == null)
-                    {
-                        progress = new()
-                        {
-                            Id = Guid.NewGuid(),
-                            UserID = _userId,
-                            WordID = wordId.Value
-                        };
-                        _dbContext.UserWordProgresses.Add(progress);
-                    }
+                    var progress = await GetOrCreateProgress(word.Id);
                     if (correct)
                     {
                         progress.CorrectUses++;
@@ -188,13 +201,35 @@ namespace LingoAITutor.Host.Services
                     else
                     {
                         progress.NonUses++;
-                        if (progress.NonUses >= progress.CorrectUses)
+                        if (progress.NonUses >= progress.CorrectUses && word.FrequencyRank >= 300 )// && !original.Any(w => IsSameWord(wordText, w)))
                             progress.FailedToUseFlag = true;
                         progress.FailedToUseSencence = fixedSentence;
-                    }                    
+                    }
                 }                
-            }            
+            }
+            var exerciseWord = FindWord(exerciseWordText);
+            if (answerWords.Any(w => IsSameWord(w, exerciseWordText)))
+            {
+                var progress = await GetOrCreateProgress(exerciseWord!.Id);
+                progress.FailedToUseFlag = false;                
+            }
             _dbContext.SaveChanges();
+        }
+
+        private async Task<UserWordProgress> GetOrCreateProgress(Guid wordId)
+        {
+            var progress = await _dbContext.UserWordProgresses.FirstOrDefaultAsync(p => p.WordID == wordId && p.UserID == _userId);
+            if (progress == null)
+            {
+                progress = new()
+                {
+                    Id = Guid.NewGuid(),
+                    UserID = _userId,
+                    WordID = wordId
+                };
+                _dbContext.UserWordProgresses.Add(progress);
+            }
+            return progress;
         }
 
         private async Task IncreaseExerciseNumber()
@@ -217,26 +252,23 @@ namespace LingoAITutor.Host.Services
         }
 
 
-        private (bool badMatchig, string[]? correctly, string[]? incorrectly) AnalyzeUsedWords(string answerText, string fixedText)
+        private (bool badMatchig, string[]? correctly, string[]? incorrectly, string[] answerWords) AnalyzeUsedWords(string answerText, string fixedText)
         {
-            var answerWords = Regex.Split(answerText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotGrammarWord(w)).ToArray();
-            var fixedWords = Regex.Split(fixedText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotGrammarWord(w)).ToArray();
-            // if it is too bad, do not take into account this exercise
-            if (BadMatching(answerWords, fixedWords))
-                return (true, null, null);
+            var answerWords = Regex.Split(answerText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
+            var fixedWords = Regex.Split(fixedText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();            
             var correctly = answerWords.Where(w => fixedWords.Any(fw => IsSameWord(fw, w))).ToArray();
             var incorrectly = fixedWords.Where(w => !answerWords.Any(aw => IsSameWord(aw, w))).ToArray();
-            return (false, correctly, incorrectly);
+            return (BadMatching(answerWords, fixedWords), correctly, incorrectly, answerWords);
         }
 
-        private Guid? FindWordId(string wordText)
+        private Word? FindWord(string wordText)
         {
             var word = _allWords.FindWordByText(wordText.ToLower());            
             if (word is not null)
-                return word.Id;
+                return word;
             var same = _allWords.GetWords().FirstOrDefault(w => IsSameWord(w.Text, wordText));
             if (same is not null)
-                return same.Id;
+                return same;
             return null;
         }
 
@@ -244,50 +276,34 @@ namespace LingoAITutor.Host.Services
         {            
             if (answerWords.Where(w => fixedWords.Any(fw => IsSameWord(w, fw))).Count() / (double)fixedWords.Length < 0.5)
                 return true;
-            if (answerWords.Where(NotGrammarWord).Count() / (double)fixedWords.Where(NotGrammarWord).Count() < 0.75)
+            if (answerWords.Where(NotExcludedFromAnalysis).Count() / (double)fixedWords.Where(NotExcludedFromAnalysis).Count() < 0.75)
                 return true;
             return false;
         }
 
-        private bool NotGrammarWord(string w)
+        private bool NotExcludedFromAnalysis(string w)
         {
             // можно пропусткать артикли и путать предлоги, употреблять неверные модальные глаголы - это не относится к словарному запасу
-            return !SpecialWords.GrammarWords.Contains(w.ToLower());
+            return !SpecialWords.NotAnalizedWords.Contains(w.ToLower());
         }
 
-        public static bool IsSameWord(string w1, string w2)
+        public static bool IsSameWord(string w1, string w2, IrregularVerbs? iv = null)
         {
             var wl1 = w1.ToLower();
             var wl2 = w2.ToLower();
             if (wl1 == wl2) return true;
-            var n1 = NormalizeWord(wl1);
-            var n2 = NormalizeWord(wl2);
-            return (n1 == n2 || n1 + "e" == n2 || n1 == n2 + "e");
-            
-            /*return w1 ==
-            if (w1 == w2) return true;
-            if (w1 + "s" == w2 || w2 + "s" == w1) return true;
-            if (w1 + "es" == w2 || w2 + "es" == w1) return true;
-            if (w1[..^1] + "ies" == w2 || w2[..^1] + "ies" == w1) return true;
-            if (w1 + "d" == w2 || w2 + "d" == w1) return true;
-            if (w1 + "ed" == w2 || w2 + "ed" == w1) return true;            
-            if (w1 + "ing" == w2 || w2 + "ing" == w1) return true;
-            if (w1 + w1[w1.Length - 1] + "ing" == w2 || w2 + w2[w2.Length - 1] + "ing" == w1) return true;
-            if (w1.Length > 1 && w1.EndsWith('e'))
-            {
-                if (w1[..^1] + w1[w1.Length - 2] + "ing" == w2) return true;
-                if (w1[..^1] + "ing" == w2) return true;
-            }
-            if (w2.Length > 1 && w2.EndsWith('e'))
-            {
-                if (w2[..^1] + w2[w2.Length - 2] + "ing" == w1) return true;
-                if (w2[..^1] + "ing" == w1) return true;
-            }
-            return false;*/
+            var n1 = NormalizeWord(wl1, iv);
+            var n2 = NormalizeWord(wl2, iv);
+            return (n1 == n2 || n1 + "e" == n2 || n1 == n2 + "e");            
         }
 
-        private static string NormalizeWord(string w)
+        private static string NormalizeWord(string w, IrregularVerbs? iv)
         {
+            if (iv is not null)
+            {
+                var v1 = iv.FindFirstForm(w);
+                if (v1 != null) return v1;
+            }
             if (w.EndsWith("ies")) return w[..^3] + "y";
             if (w.EndsWith("es")) return w[..^2];
             if (w.EndsWith("s") && w.Length>1 && w[w.Length - 2] != 's' && w[w.Length - 2] != 'h' && w[w.Length - 2] != 'x') return w[..^1];

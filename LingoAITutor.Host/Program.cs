@@ -61,12 +61,14 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<UserIdHepler>();
 builder.Services.AddTransient<VocabluaryImport>();
+builder.Services.AddTransient<IrregularImport>();
 builder.Services.AddSingleton(new OpenAIAPI("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"));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
 builder.Services.AddTransient<TranslationExerciseGenerator>();
 builder.Services.AddTransient<VocabularySizeCalculation>();
 builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
+builder.Services.AddSingleton<IrregularVerbs>();
 
 builder.Services.AddCors();
 
@@ -148,18 +150,26 @@ static void SeedDatabase(IServiceScope scope)
         return;
     }
 
+#if DEBUG
+    var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+    var path = Path.Combine(env.ContentRootPath, "Txt");
+#else
+    var path = "txt/";
+#endif    
+
     if (!context.Words.Any())
     {
         var vocabluaryImport = scope.ServiceProvider.GetRequiredService<VocabluaryImport>();
-        var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-#if DEBUG
-        var path = Path.Combine(env.ContentRootPath, "Txt");
-#else
-        var path = "txt/";
-#endif
+        
         vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
     }
-    context.Words.Where(w => SpecialWords.GrammarWords.Contains(w.Text)).ExecuteDelete();
+    if (!context.Irregulars.Any())
+    {
+        Log.Information("Read irregular from file ", Path.Combine(path, "irregular.txt").ToString());
+        var irregularImport = scope.ServiceProvider.GetRequiredService<IrregularImport>();
+        irregularImport.Import(Path.Combine(path, "irregular.txt"));
+    }
+    context.Words.Where(w => SpecialWords.NotAnalizedWords.Contains(w.Text)).ExecuteDelete();
 
     if (!context.Users.Any(u => u.UserName == "ilka"))
     {        
@@ -181,6 +191,8 @@ static void SeedDatabase(IServiceScope scope)
             PasswordHash = "AQAAAAIAAYagAAAAEK0CjBl+Cyd8TCixgR0noN4PRLxq2u7lLZsDUJVGRE68NO9HerDnYY12X4BrI6mxQA=="
         });
     }
+
+    
 
     //if (!context.UserProgresses.Any())
     {

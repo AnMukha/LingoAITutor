@@ -28,7 +28,6 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
-    <Folder Include="txt\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,6 +53,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="txt\COCA 5000.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="txt\irregular.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

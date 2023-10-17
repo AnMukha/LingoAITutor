@@ -61,16 +61,16 @@ namespace LingoAITutor.Host.Services
                 string gptTask;
                 if (strategy != NextWordStrategy.FromFailedWords || up == null)
                 { 
-                    gptTask = $"I need an exercise for A2 level of English to improve my English vocabulary{sbj}. Create one English sentence with the word \"{word.Text}\", translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
+                    gptTask = $"I need an exercise for beginner level of English to improve my English vocabulary{sbj}. Create one English sentence with the word \"{word.Text}\", translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
                 }
                 else
                 {
-                    gptTask = $"I need an exercise for A2 level of English to improve my English vocabulary{sbj}. I failed to use word \"{word.Text}\" in this sentence: \"{up.FailedToUseSencence}\". Create another English sentence (not same, absolutely different!) with the word \"{word.Text}\" used in a similar sense, translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
+                    gptTask = $"I need an exercise for beginner level of English to improve my English vocabulary. I failed to use word \"{word.Text}\" in this sentence: \"{up.FailedToUseSencence}\". Create another English sentence (not same, absolutely different!) with the word \"{word.Text}\" used in a similar sense, translate it to Russian. As output I want only two this sentence in separate lines without any another notices.";
                 }
                 var result = await _openAPI.Chat.CreateChatCompletionAsync(new ChatRequest()
                 {
                     Model = Model.GPT4,
-                    Temperature = 1,
+                    Temperature = 0.9,
                     MaxTokens = 100,
                     Messages = new ChatMessage[] {
                     new ChatMessage(ChatMessageRole.User, gptTask)}
