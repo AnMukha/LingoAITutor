@@ -17,7 +17,7 @@ namespace LingoAITutor.Host.Endpoints
         {
             application.MapPost("api/login", Login).WithOpenApi(operation => new(operation)
             {
-                Summary = "Login",
+                Summary = "Login"                
             });            
         }
 

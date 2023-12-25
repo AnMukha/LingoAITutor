@@ -3,6 +3,7 @@ using System;
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LingoAITutor.Host.Migrations
 {
     [DbContext(typeof(LingoDbContext))]
-    partial class LingoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231028195744_texts")]
+    partial class texts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,7 +238,7 @@ namespace LingoAITutor.Host.Migrations
                     b.Property<Guid>("UserID")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("WordID")
+                    b.Property<Guid>("WordID")
                         .HasColumnType("uuid");
 
                     b.Property<string>("WordText")
@@ -309,7 +312,9 @@ namespace LingoAITutor.Host.Migrations
 
                     b.HasOne("LingoAITutor.Host.Entities.Word", "Word")
                         .WithMany("UserWordProgresses")
-                        .HasForeignKey("WordID");
+                        .HasForeignKey("WordID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
 

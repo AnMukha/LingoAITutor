@@ -23,11 +23,11 @@ namespace LingoAITutor.Host.Services
             var usedCount = await _dbContext.UserWordProgresses.Where(up => up.UserID == userId).CountAsync();
             var usedCorrectly = await _dbContext.UserWordProgresses.Where(up => up.UserID == userId &&
                                 up.NonUses < up.CorrectUses).CountAsync();
-            var userProgress = await _dbContext.UserProgresses.FirstAsync(u => u.UserId == userId);
+            var userProgress = _dbContext.UserProgresses==null? null : await _dbContext.UserProgresses.FirstAsync(u => u.UserId == userId);
             return new VocabularySizeInfoDto()
             {
                 EstimatedVocabulary = (int)Math.Round(estimated),
-                Exercises = userProgress.ExerciseNumber,
+                Exercises = userProgress?.ExerciseNumber ??0,
                 UsedCorrecty = usedCorrectly,
                 Used = usedCount
             };            

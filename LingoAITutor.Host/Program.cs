@@ -61,6 +61,8 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<UserIdHepler>();
 builder.Services.AddTransient<VocabluaryImport>();
+builder.Services.AddTransient<Words100Import>();
+builder.Services.AddTransient<NamesExcluding>();
 builder.Services.AddTransient<IrregularImport>();
 builder.Services.AddSingleton(new OpenAIAPI("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"));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
@@ -100,7 +102,7 @@ Auth.AddEndpoints(app);
 
 using (var scope = app.Services.CreateScope())
 {
-    SeedDatabase(scope);
+    new DBSeeder(scope).Seed();
 }
 
 // Configure the HTTP request pipeline.
@@ -136,95 +138,6 @@ app.MapGet("/api/weatherforecast", () =>
 
 app.Run();
 
-static void SeedDatabase(IServiceScope scope)
-{    
-    var context = scope.ServiceProvider.GetRequiredService<LingoDbContext>();
-
-    try
-    {
-        context.Database.Migrate();
-    }
-    catch
-    {
-        Log.Logger.Error("Error on database migration attempt.");
-        return;
-    }
-
-#if DEBUG
-    var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-    var path = Path.Combine(env.ContentRootPath, "Txt");
-#else
-    var path = "txt/";
-#endif    
-
-    if (!context.Words.Any())
-    {
-        var vocabluaryImport = scope.ServiceProvider.GetRequiredService<VocabluaryImport>();
-        
-        vocabluaryImport.Import(Path.Combine(path, "cambridge.txt"), Path.Combine(path, "COCA 5000.txt"), Path.Combine(path, "10000.txt"));
-    }
-    if (!context.Irregulars.Any())
-    {
-        Log.Information("Read irregular from file ", Path.Combine(path, "irregular.txt").ToString());
-        var irregularImport = scope.ServiceProvider.GetRequiredService<IrregularImport>();
-        irregularImport.Import(Path.Combine(path, "irregular.txt"));
-    }
-    context.Words.Where(w => SpecialWords.NotAnalizedWords.Contains(w.Text)).ExecuteDelete();
-
-    if (!context.Users.Any(u => u.UserName == "ilka"))
-    {        
-        context.Users.Add(new User()
-        {
-            Id = Guid.NewGuid(),
-            UserName = "ilka",
-            Email = "ilka@test.com",
-            PasswordHash = "AQAAAAIAAYagAAAAEK0CjBl+Cyd8TCixgR0noN4PRLxq2u7lLZsDUJVGRE68NO9HerDnYY12X4BrI6mxQA=="
-        });
-    }
-    if (!context.Users.Any(u => u.UserName == "mukha"))
-    {
-        context.Users.Add(new User()
-        {
-            Id = Guid.NewGuid(),
-            UserName = "mukha",
-            Email = "mukha@test.com",
-            PasswordHash = "AQAAAAIAAYagAAAAEK0CjBl+Cyd8TCixgR0noN4PRLxq2u7lLZsDUJVGRE68NO9HerDnYY12X4BrI6mxQA=="
-        });
-    }
-
-    
-
-    //if (!context.UserProgresses.Any())
-    {
-        //context.UserProgresses.Add(new UserProgress() { UserId = TranslationExerciseAnaliser.UserId });
-        /*context.RangeProgresses.Add(new RangeProgress()
-        {
-            Id = Guid.NewGuid(),
-            UserProgressId = TranslationExerciseAnaliser.UserId,
-            StartPosition = 0,
-            WordsCount = 500
-        });
-        var userId = Guid.NewGuid();
-        context.RangeProgresses.Add(new RangeProgress()
-        {
-            Id = userId,
-            UserProgressId = userId,
-            StartPosition = 500,
-            WordsCount = 500
-        });
-        for (var i = 1; i < context.Words.Count() / 1000 + 1; i++)
-        {
-            context.RangeProgresses.Add(new RangeProgress()
-            {
-                Id = Guid.NewGuid(),
-                UserProgressId = TranslationExerciseAnaliser.UserId,
-                StartPosition = i * 1000,
-                WordsCount = 1000
-            });
-        };*/
-    }
-    context.SaveChanges();
-}
 
 internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

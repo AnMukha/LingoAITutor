@@ -1,0 +1,14 @@
+Recipes and Generative AI
+Our HelloFresh menus are created by local recipe developers who carefully curate the meal selection taking into consideration local preferences and seasonal ingredients.
+Our core value is to listen to our customers and use their feedback to continually optimise our service and develop new recipes.
+If a recipe is suboptimal, we lose customer satisfaction, time and revenue in refining it.
+How might one go about tackling these challenges? We’re going to explore one way in this blog: generative AI — more specifically: generative language models.
+We will explore how training language models on the order of ~1M parameters can be a relatively easy task.
+Generating models that are fit for purpose, are not costly to train or host and can run in realtime on CPUs without any need for heavy investment in infrastructure or setup.
+These are some substantial advantages compared to large language models which have parameters on the scale of billions.
+The idea of AI generated food isn’t new. 
+You can log into ChatGPT now and ask it to give you an idea of what to cook, or give it a list of ingredients and tell you what to make. 
+It might generate something that tastes great, or not. 
+But these are not necessarily aligned to the HelloFresh brand, style, ingredients or recipe philosophy.
+In this blog post, we will specifically explore the creation of recipe ideas through a language model. 
+Noticeably, we will not explore “large” language models for this task, but a “tiny” language model.

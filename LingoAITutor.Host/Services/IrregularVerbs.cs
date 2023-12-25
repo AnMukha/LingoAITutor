@@ -26,7 +26,7 @@ namespace LingoAITutor.Host.Services
         {
             foreach(var v in GetIrregulars())
             {
-                if (v.V2 == verb || v.V3 == verb)
+                if (v.V1 == verb || v.V2 == verb || v.V3 == verb)
                     return v.V1;
             }
             return null;

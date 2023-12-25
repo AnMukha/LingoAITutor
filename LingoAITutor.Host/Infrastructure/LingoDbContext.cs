@@ -14,8 +14,11 @@ namespace LingoAITutor.Host.Infrastructure
         public DbSet<User> Users { get; set; }
         public DbSet<UserWordProgress> UserWordProgresses { get; set; }
         public DbSet<UserProgress> UserProgresses { get; set; }
+        public DbSet<UserTextProgress> UserTextProgresses { get; set; }
         public DbSet<RangeProgress> RangeProgresses { get; set; }
         public DbSet<Irregular> Irregulars { get; set; }
+
+        public DbSet<Text> Texts { get; set; }
 
     }
 }

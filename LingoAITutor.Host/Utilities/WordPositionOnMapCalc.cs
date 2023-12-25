@@ -44,7 +44,7 @@ namespace LingoAITutor.Host.Utilities
 
         private static bool IsTooCloseToExistingPoints(PointF point, List<PointF> existingPoints)
         {
-            return existingPoints.Any(existingPoint => Distance(point, existingPoint) < 4);
+            return existingPoints.Any(existingPoint => Distance(point, existingPoint) < 3);
         }
 
         private static float Distance(PointF a, PointF b)

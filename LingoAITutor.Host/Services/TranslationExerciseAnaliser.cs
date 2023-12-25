@@ -1,5 +1,4 @@
-﻿using Azure;
-using LingoAITutor.Host.Dto;
+﻿using LingoAITutor.Host.Dto;
 using LingoAITutor.Host.Endpoints;
 using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Entities.Enums;
@@ -9,8 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace LingoAITutor.Host.Services
@@ -93,7 +90,7 @@ namespace LingoAITutor.Host.Services
         private async Task MarkMainWordIfUsed(string[] answerWords, string wordText)
         {
             var word = FindWord(wordText);
-            if (answerWords.Any(w => IsSameWord(w, wordText)))
+            if (answerWords.Any(w => IsSameWord(w, wordText, _irregularVerbs)))
             {                
                 var progress = await GetOrCreateProgress(word!.Id);
                 progress.FailedToUseFlag = false;
@@ -151,10 +148,10 @@ namespace LingoAITutor.Host.Services
             var answerWords = Regex.Split(answer.AnswerText!, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
             var fixedWords = Regex.Split(fixedPhrase, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
             // корректно: слово есть в переводе
-            if (answerWords.Any(w => IsSameWord(w, answer.Word!)))
+            if (answerWords.Any(w => IsSameWord(w, answer.Word!, _irregularVerbs)))
                 return true;
             // слово есть в исправленном, нет в переводе - не корректно.
-            if (fixedWords.Any(w => IsSameWord(w, answer.Word!)))
+            if (fixedWords.Any(w => IsSameWord(w, answer.Word!, _irregularVerbs)))
                 return false;
             // ни там ни там - спросить чат
             var result = await _openAPI.Chat.CreateChatCompletionAsync(new ChatRequest()
@@ -176,7 +173,7 @@ namespace LingoAITutor.Host.Services
             if (Regex.Split(resultText, @"\W+").Length == 1)
             {
                 // соответствующее слово переведено не верно
-                if (!answerWords.Any(w => IsSameWord(w, resultText)))
+                if (!answerWords.Any(w => IsSameWord(w, resultText, _irregularVerbs)))
                     return false;                
             }
             return null;
@@ -208,7 +205,7 @@ namespace LingoAITutor.Host.Services
                 }                
             }
             var exerciseWord = FindWord(exerciseWordText);
-            if (answerWords.Any(w => IsSameWord(w, exerciseWordText)))
+            if (answerWords.Any(w => IsSameWord(w, exerciseWordText, _irregularVerbs)))
             {
                 var progress = await GetOrCreateProgress(exerciseWord!.Id);
                 progress.FailedToUseFlag = false;                
@@ -256,8 +253,8 @@ namespace LingoAITutor.Host.Services
         {
             var answerWords = Regex.Split(answerText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();
             var fixedWords = Regex.Split(fixedText, @"\W+").Where(w => !string.IsNullOrWhiteSpace(w) && NotExcludedFromAnalysis(w)).ToArray();            
-            var correctly = answerWords.Where(w => fixedWords.Any(fw => IsSameWord(fw, w))).ToArray();
-            var incorrectly = fixedWords.Where(w => !answerWords.Any(aw => IsSameWord(aw, w))).ToArray();
+            var correctly = answerWords.Where(w => fixedWords.Any(fw => IsSameWord(fw, w, _irregularVerbs))).ToArray();
+            var incorrectly = fixedWords.Where(w => !answerWords.Any(aw => IsSameWord(aw, w, _irregularVerbs))).ToArray();
             return (BadMatching(answerWords, fixedWords), correctly, incorrectly, answerWords);
         }
 
@@ -274,7 +271,7 @@ namespace LingoAITutor.Host.Services
 
         private bool BadMatching(string[] answerWords, string[] fixedWords)
         {            
-            if (answerWords.Where(w => fixedWords.Any(fw => IsSameWord(w, fw))).Count() / (double)fixedWords.Length < 0.5)
+            if (answerWords.Where(w => fixedWords.Any(fw => IsSameWord(w, fw, _irregularVerbs))).Count() / (double)fixedWords.Length < 0.5)
                 return true;
             if (answerWords.Where(NotExcludedFromAnalysis).Count() / (double)fixedWords.Where(NotExcludedFromAnalysis).Count() < 0.75)
                 return true;
