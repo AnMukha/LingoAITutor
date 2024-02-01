@@ -71,6 +71,7 @@ builder.Services.AddTransient<VocabularySizeCalculation>();
 builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
 builder.Services.AddSingleton<IrregularVerbs>();
+builder.Services.AddTransient<ChatProgressor>();
 
 builder.Services.AddCors();
 
@@ -99,6 +100,8 @@ app.UseAuthorization();
 VocabularyMapEndpoints.AddEndpoints(app);
 VocabularyTrainingEndpoints.AddEndpoints(app);
 Auth.AddEndpoints(app);
+ChatEndpoints.AddEndpoints(app);
+MessagesEndpoints.AddEndpoints(app);
 
 using (var scope = app.Services.CreateScope())
 {

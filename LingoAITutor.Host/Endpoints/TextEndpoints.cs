@@ -1,9 +1,6 @@
 ﻿using LingoAITutor.Host.Dto;
-using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
-using LingoAITutor.Host.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace LingoAITutor.Host.Endpoints
 {    

@@ -3,6 +3,7 @@ using System;
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LingoAITutor.Host.Migrations
 {
     [DbContext(typeof(LingoDbContext))]
-    partial class LingoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240129155425_ChatList")]
+    partial class ChatList
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,9 +32,6 @@ namespace LingoAITutor.Host.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("ChatType")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("LastMessageNumber")
                         .HasColumnType("integer");
 
                     b.Property<string>("Title")
@@ -86,9 +86,6 @@ namespace LingoAITutor.Host.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("MessageType")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Number")
                         .HasColumnType("integer");
 
                     b.HasKey("MessageId");

@@ -101,7 +101,7 @@ namespace LingoAITutor.Host.Utilities
 
         private void SeedWords(string path)
         {
-            if (_context.Words.Count() < 100000)
+            if (_context.Words.Count() < 10000)
             {
                 var w100Import = _scope.ServiceProvider.GetRequiredService<Words100Import>();
                 w100Import.UpdateWords(Path.Combine(path, "words.txt"), Path.Combine(path, "propernames.txt"), Path.Combine(path, "not_es_words.txt"));
