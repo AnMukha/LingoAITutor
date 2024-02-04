@@ -7,7 +7,8 @@ namespace LingoAITutor.Host.Dto
     {        
         public Guid MessageId { get; set; }
         public string? Content { get; set; }
+        public string? CorrectedContent { get; set; }
+        public string? Corrections { get; set; }
         public MessageType MessageType { get; set; }
-
     }
 }

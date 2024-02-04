@@ -4,12 +4,14 @@ using LingoAITutor.Host.Infrastructure;
 using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.Common;
 using LingoAITutor.Host.Utilities;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenAI_API;
 using Serilog;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,11 @@ Log.Logger = new LoggerConfiguration().CreateLogger();
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services));
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -72,6 +79,7 @@ builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
 builder.Services.AddSingleton<IrregularVerbs>();
 builder.Services.AddTransient<ChatProgressor>();
+builder.Services.AddTransient<GrammarChecker>();
 
 builder.Services.AddCors();
 

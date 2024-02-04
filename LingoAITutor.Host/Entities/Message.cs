@@ -8,6 +8,8 @@ namespace LingoAITutor.Host.Entities
         [Key]
         public Guid MessageId { get; set; }
         public string? Content { get; set; }
+        public string? CorrectedContent { get; set; }
+        public string? Corrections { get; set; }
         public MessageType MessageType { get; set; }
         public int Number { get; set; }
     }

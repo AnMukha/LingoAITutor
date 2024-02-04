@@ -1,4 +1,5 @@
 ﻿using LingoAITutor.Host.Entities.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LingoAITutor.Host.Dto
 {
@@ -6,6 +7,6 @@ namespace LingoAITutor.Host.Dto
     {
         public Guid? ChatId { get; set; }
         public ChatType ChatType { get; set; }
-        public string? Title { get; set; }
+        public string? Title { get; set; }        
     }
 }

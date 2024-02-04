@@ -3,6 +3,7 @@ using System;
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LingoAITutor.Host.Migrations
 {
     [DbContext(typeof(LingoDbContext))]
-    partial class LingoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240203000958_Corrected1")]
+    partial class Corrected1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,12 +36,6 @@ namespace LingoAITutor.Host.Migrations
 
                     b.Property<int>("LastMessageNumber")
                         .HasColumnType("integer");
-
-                    b.Property<int>("Number")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Number"));
 
                     b.Property<string>("Title")
                         .HasColumnType("text");

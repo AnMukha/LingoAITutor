@@ -24,7 +24,7 @@ namespace LingoAITutor.Host.Services
             var chat = await _dbContext.Chats.Include(ch => ch.Messages).FirstOrDefaultAsync(ch => ch.ChatId == chatId);
             if (chat == null) return null;
             var messages = chat.Messages.OrderBy(m => m.Number).ToArray();
-            if (messages.Last().MessageType == Entities.Enums.MessageType.GPTMessage)
+            if (messages.Last().MessageType == MessageType.GPTMessage)
                 return messages.Last();
 
             var gptResponseText = await GetGPTResponse(chat, messages);

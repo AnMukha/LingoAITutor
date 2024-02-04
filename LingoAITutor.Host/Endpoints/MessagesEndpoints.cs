@@ -22,7 +22,9 @@ namespace LingoAITutor.Host.Endpoints
             return Results.Ok(chat.Messages.Select(m => new MessageDto()
             {
                 MessageId = m.MessageId,
-                Content = m.Content,                
+                Content = m.Content,
+                CorrectedContent = m.CorrectedContent,
+                Corrections = m.Corrections,
                 MessageType = m.MessageType
             }).ToArray());
         }
