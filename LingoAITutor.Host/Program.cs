@@ -71,7 +71,7 @@ builder.Services.AddTransient<VocabluaryImport>();
 builder.Services.AddTransient<Words100Import>();
 builder.Services.AddTransient<NamesExcluding>();
 builder.Services.AddTransient<IrregularImport>();
-builder.Services.AddSingleton(new OpenAIAPI("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"));
+builder.Services.AddSingleton(new OpenAIAPI("***"));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
 builder.Services.AddTransient<TranslationExerciseGenerator>();
 builder.Services.AddTransient<VocabularySizeCalculation>();
