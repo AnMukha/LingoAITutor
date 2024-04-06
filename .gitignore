@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/LingoAITutor.Host/appsettings.Development.json
+/LingoAITutor.Host - Copy/appsettings.Development.json
