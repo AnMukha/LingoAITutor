@@ -22,37 +22,6 @@ namespace LingoAITutor.Host.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("LingoAITutor.Host.Entities.Chat", b =>
-                {
-                    b.Property<Guid>("ChatId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ChatType")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("LastMessageNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Number")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Number"));
-
-                    b.Property<string>("Title")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ChatId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Chats");
-                });
-
             modelBuilder.Entity("LingoAITutor.Host.Entities.Irregular", b =>
                 {
                     b.Property<Guid>("Id")
@@ -79,13 +48,64 @@ namespace LingoAITutor.Host.Migrations
                     b.ToTable("Irregulars");
                 });
 
+            modelBuilder.Entity("LingoAITutor.Host.Entities.Lesson", b =>
+                {
+                    b.Property<Guid>("LessonId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AIModeInChat")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomContent")
+                        .HasColumnType("text");
+
+                    b.Property<int>("LastMessageNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LowQualityCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MessagesCount")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("NextQuestionRandom")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProgressInfo")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RevisedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ScenarioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SectionNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("LessonId");
+
+                    b.HasIndex("ScenarioId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Lessons");
+                });
+
             modelBuilder.Entity("LingoAITutor.Host.Entities.Message", b =>
                 {
                     b.Property<Guid>("MessageId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ChatId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Content")
@@ -97,15 +117,21 @@ namespace LingoAITutor.Host.Migrations
                     b.Property<string>("Corrections")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("MessageType")
                         .HasColumnType("integer");
 
                     b.Property<int>("Number")
                         .HasColumnType("integer");
 
+                    b.Property<int>("SectionNumber")
+                        .HasColumnType("integer");
+
                     b.HasKey("MessageId");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex("LessonId");
 
                     b.ToTable("Messages");
                 });
@@ -133,6 +159,38 @@ namespace LingoAITutor.Host.Migrations
                     b.HasIndex("UserProgressId");
 
                     b.ToTable("RangeProgresses");
+                });
+
+            modelBuilder.Entity("LingoAITutor.Host.Entities.ScenarioTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AIModeInChat")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("NextQuestionRandom")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Preface")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ScenarioType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScenarioTemplates");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.Text", b =>
@@ -339,22 +397,34 @@ namespace LingoAITutor.Host.Migrations
                     b.ToTable("Words");
                 });
 
-            modelBuilder.Entity("LingoAITutor.Host.Entities.Chat", b =>
+            modelBuilder.Entity("LingoAITutor.Host.Entities.Lesson", b =>
                 {
+                    b.HasOne("LingoAITutor.Host.Entities.ScenarioTemplate", "Scenario")
+                        .WithMany()
+                        .HasForeignKey("ScenarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("LingoAITutor.Host.Entities.User", "User")
-                        .WithMany("Chats")
+                        .WithMany("Lessons")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Scenario");
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.Message", b =>
                 {
-                    b.HasOne("LingoAITutor.Host.Entities.Chat", null)
+                    b.HasOne("LingoAITutor.Host.Entities.Lesson", "Lesson")
                         .WithMany("Messages")
-                        .HasForeignKey("ChatId");
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.RangeProgress", b =>
@@ -396,7 +466,7 @@ namespace LingoAITutor.Host.Migrations
                     b.Navigation("Word");
                 });
 
-            modelBuilder.Entity("LingoAITutor.Host.Entities.Chat", b =>
+            modelBuilder.Entity("LingoAITutor.Host.Entities.Lesson", b =>
                 {
                     b.Navigation("Messages");
                 });
@@ -408,7 +478,7 @@ namespace LingoAITutor.Host.Migrations
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.User", b =>
                 {
-                    b.Navigation("Chats");
+                    b.Navigation("Lessons");
 
                     b.Navigation("UserWordProgresses");
                 });

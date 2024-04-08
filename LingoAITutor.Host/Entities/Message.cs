@@ -12,5 +12,8 @@ namespace LingoAITutor.Host.Entities
         public string? Corrections { get; set; }
         public MessageType MessageType { get; set; }
         public int Number { get; set; }
+        public int SectionNumber { get; set; }
+        public Guid LessonId { get; set; }
+        public Lesson Lesson { get; set; } = null!;
     }
 }

@@ -1,0 +1,159 @@
+What are the main principles of OOP?
+What are inheritance, encapsulation, abstraction, and polymorphism? Can you provide examples (preferably from your own experience)? Which class do all classes in .NET implicitly inherit from? Is multiple inheritance allowed in C#?
+What is recursion?
+What is a lambda expression?
+What is parallel programming (multithreading) and its purpose? What classes are used?
+What is JSON?
+How do you understand REST?
+Tell us about the SPA concept.
+Which GoF patterns have you used?
+What is the difference between GET and POST HTTP methods?
+What problem does Docker solve? What are its advantages and disadvantages?
+How do unit tests fundamentally differ from integration tests?
+What is an Exception?
+What are the purposes of try, catch, finally? In what case might the finally block not execute?
+What is a call stack? What keywords do you know?
+What is ASP.NET?
+What types of Action filters exist?
+What is a Web Service?
+What is CLR?
+What is the Garbage Collector on a basic level?
+What is a delegate?
+Does Delegate differ from Action?
+What is LINQ and what is it used for? Provide several examples of using LINQ.
+What is a namespace and why is it necessary?
+What data types do you know?
+What primitive types do you know?
+What is a Nullable type?
+What is a value type and what is a reference type? Which of these is class and which is struct? In what part of memory are they stored?
+How do value and reference types differ? Is String a reference or a value?
+What is the difference between string builder and string?
+What are generics? What problems do they solve?
+What are boxing and unboxing?
+What are Array, List, HashSet, Dictionary? Provide examples of using these data structures. What is the complexity of operations with them (search, insertion, deletion)?
+What collections are you aware of?
+What does the yield operator do?
+What is a class?
+How does a class differ from an abstract class?
+How does an abstract class differ from an interface? Why are interfaces needed and what tasks do they perform?
+What access modifiers do you know?
+What is the difference between a regular class and a static class?
+What is the difference in method overriding between the new and override keywords?
+What is the difference between const and read-only?
+Difference between structure and class. Provide examples of structures.
+Can an instance of a structure be stored in the heap? How can this be achieved?
+What is asynchrony and how does it differ from multithreading?
+What are the key words for using asynchrony in code?
+What do the keywords async / await mean?
+Difference between relational and non-relational databases, advantages, and disadvantages of using both.
+What are indexes in RDBMS?
+What types of JOIN exist in SQL?
+What is the purpose of unit tests?
+What are the advantages and disadvantages of using unit tests?
+What are the three logical blocks of a unit test?
+You type google.com in the browser. Describe in as much detail as possible what happens at the HTTP level at this time.
+How does HTTPS work?
+How do you understand SOLID?
+What serialization protocols do you know and where are they applied?
+What do you understand by a pure function? What advantages does it have?
+What is dependency injection and why is it needed?
+What are cohesion and coupling?
+What are IaaS, PaaS, SaaS, and the differences between them?
+What debugging practices do you use?
+What patterns do you know? Explain the essence of the listed ones.
+What is the essence of the Singleton pattern? Why is it also called an anti-pattern?
+What is the Strategy pattern for?
+What are the key differences between distributed systems and monolithic ones?
+What design patterns for distributed systems do you know?
+What are the principles of working with a Message bus? Why might duplicates occur in queues?
+What principles of building idempotent services do you know?
+Tell us how asynchronous methods work. How does asynchrony differ from parallelism?
+What exceptions cannot be caught in a catch block?
+What is the difference between .NET Standard Class Library and .NET Core Class Library?
+Explain the difference between deferred and immediate execution in LINQ. Provide examples.
+What is the purpose of the ConfigureServices method in Startup.cs?
+What is the difference between services.AddTransient and services.AddScoped in ASP.NET Core?
+What is Kestrel?
+Describe the ASP.NET MVC request pipeline.
+How to configure caching of responses to HTTP requests in ASP.NET WebAPI?
+What are the heap and the stack? Differences, operating principles.
+How does the garbage collector work?
+Why do we have the reserved word using in C#, if .NET has automatic memory management? How is this related to the disposable pattern and why such a complex pattern for managed and unmanaged resources?
+What are the features of working with the Large Object Heap?
+When is a generic class of a specific type generated - at runtime or during compilation?
+What is reflection?
+Tell us about the LinkedList<T> collection. How does it differ from other collections?
+What is an indexer?
+What is an immutable object? What advantages does using an immutable object provide? Propose a way to implement it in .NET.
+When to use StringBuilder and when string? How does StringBuilder work?
+What is tree balancing?
+What are Key-value structures?
+What is a hash function and why are hash tables needed?
+What properties should an ideal hash function have?
+What are collisions and how to deal with them?
+What are the complexities of CRUD operations in Dictionary<K, V> in .NET?
+Where are arrays stored? Arrays of primitive types?
+What is the difference between an array (T[]) and a list (List<T>)?
+What is the difference between IList<T> and IEnumerable<T>?
+Why are Enumerable, Observable, AsyncEnumerable needed and what data retrieval models do they implement?
+What is the difference between IEnumerable and IQueryable?
+What are enum flags?
+Tell us about the normal forms in DBMS.
+What is an index in a database?
+When should indexes be used? Advantages and disadvantages.
+What types of indexes exist? How do they differ?
+What is ACID?
+What isolation levels for transactions do you know?
+What is an execution plan (execution plan) in MS SQL?
+Problem: a query takes a long time to execute. What methods of diagnosis and solution are there?
+How do ORM (Entity Framework or Entity Framework Core) translate C# code into database query language? What is used for this?
+Why use Task.ConfigureAwait?
+For example, there is a web server that makes a database query for each HTTP request and waits for the results, in which case the thread is blocked. Can this work be optimized using .NET?
+Why is ThreadPool needed? Describe the mechanics of how a thread is allocated and returned to the ThreadPool.
+Besides OOP, what practices have you used (AOP, FP, etc.)?
+Name the three most challenging problems you've had to solve. How did you do it, how did you come to the solution?
+What is loosely coupled code? How is it better than tightly coupled code? How would you achieve more loosely coupled code?
+Does the use of static classes increase or decrease code coupling?
+How can you measure code performance? Does the fact of measurement affect performance?
+What are multi-stage builds in Docker used for and how do they work?
+How to understand that some part of the code utilizes a lot of memory or takes a long time to execute? What could be a bottleneck in different cases? What are the ways to reduce memory usage and memory traffic?
+How would you implement a cross-cutting concern (e.g., logging, validation, transactions)?
+Tell us about the Rest Maturity Model.
+What are CPU and IO-bound tasks?
+What is marshaling?
+How does async / await work (in detail)? Why shouldn't async void methods be used?
+How does lock work? Can structures be used inside the lock expression?
+What is an Expression Tree?
+How does the garbage collector work (in detail)? Why are there three generations in GC, not, say, five, ten, or two?
+How would you organize tracing of Web API services?
+How can you configure the storage of secrets in .NET Core on developers' computers and in production environments?
+How would you organize the CI/CD process of .NET Core services for their deployment to cloud infrastructure?
+How to enable CORS in AspNetCore?
+How are generics implemented?
+How to create your own immutable type?
+How does IEnumerable<T> work (in detail)?
+What algorithm does the STACK collection use?
+What data structures have you implemented yourself for the .NET platform? Tell us how they differed from standard implementations.
+How does an interface differ from an abstract class? In which cases would you use one over the other?
+Why doesn't a structure have a default constructor?
+How do databases save data?
+What types of databases do you know?
+How and when is it best to use databases?
+What is denormalization?
+When and which transaction isolation levels can be used?
+How are the ACID principles implemented in popular DBMS (SQL Server, PostgreSQL, etc.)?
+Have you ever had to optimize a database query? If yes, how?
+Describe any potential problems associated with parallel database queries.
+Which database would you use to implement a distributed lock mechanism? Discuss the implementation details.
+What problem do microservices solve?
+What are the ways of communicating microservices?
+Discuss the implementation options for distributed transactions in microservices.
+What is a circuit breaker?
+How would you troubleshoot a system consisting of many microservices if you need to track the complete path of request processing?
+What are message brokers? What are at-least-once, at-most-once semantics? Are there any brokers that guarantee exactly-once semantics?
+How should the client code of a broker work depending on the chosen semantics?
+What tools for working with queues do you know (both in .NET and separate products), which tool/product would you choose and why?
+What types of services exist in Service Fabric?
+What features and limitations does Azure Table Storage have?
+How to deal with the cold start problem in Azure Functions?
+What is the difference between queues and topics in Azure Service Bus?

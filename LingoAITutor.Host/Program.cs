@@ -3,7 +3,9 @@ using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
 using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.Common;
+using LingoAITutor.Host.Services.LessonProgress;
 using LingoAITutor.Host.Utilities;
+using LingoAITutor.Host.Utilities.Seeders;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -58,8 +60,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var openAIKey = builder.Configuration.GetValue<string>("OpenAIKey");
 //builder.Services.AddDbContext<LingoDbContext>(options =>
-    //options.UseSqlServer(connectionString));
+//options.UseSqlServer(connectionString));
 
 builder.Services.AddDbContext<LingoDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -71,15 +74,16 @@ builder.Services.AddTransient<VocabluaryImport>();
 builder.Services.AddTransient<Words100Import>();
 builder.Services.AddTransient<NamesExcluding>();
 builder.Services.AddTransient<IrregularImport>();
-builder.Services.AddSingleton(new OpenAIAPI("***"));
+builder.Services.AddSingleton(new OpenAIAPI(openAIKey));
 builder.Services.AddTransient<TranslationExerciseAnaliser>();
 builder.Services.AddTransient<TranslationExerciseGenerator>();
 builder.Services.AddTransient<VocabularySizeCalculation>();
 builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
 builder.Services.AddSingleton<IrregularVerbs>();
-builder.Services.AddTransient<ChatProgressor>();
+builder.Services.AddTransient<LessonProgressor>();
 builder.Services.AddTransient<GrammarChecker>();
+builder.Services.AddTransient<MissingWordGuesser>();
 
 builder.Services.AddCors();
 
@@ -98,7 +102,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseCors(builder =>
-       builder.WithOrigins("http://localhost:3000", "http://185.229.227.166")
+       builder.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://185.229.227.166")
               .AllowAnyMethod()
               .AllowAnyHeader());
 
@@ -108,8 +112,9 @@ app.UseAuthorization();
 VocabularyMapEndpoints.AddEndpoints(app);
 VocabularyTrainingEndpoints.AddEndpoints(app);
 Auth.AddEndpoints(app);
-ChatEndpoints.AddEndpoints(app);
+LessonEndpoints.AddEndpoints(app);
 MessagesEndpoints.AddEndpoints(app);
+ScenariosEndpoints.AddEndpoints(app);
 
 using (var scope = app.Services.CreateScope())
 {
