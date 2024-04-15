@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /LingoAITutor.Host/appsettings.Development.json
 /LingoAITutor.Host - Copy/appsettings.Development.json
+/LingoAITutor.Host/txt/books/hpmor.txt
