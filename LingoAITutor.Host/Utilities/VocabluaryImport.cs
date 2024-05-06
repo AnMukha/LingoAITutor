@@ -34,7 +34,7 @@ namespace LingoAITutor.Host.Utilities
             // wordsFromFile3 = ExcludeForms(wordsFromFile3);
             foreach (var word in wordsFromFile3)
             {
-                if (!processedWords.Contains(word) && !processedWords.Any(w => TranslationExerciseAnaliser.IsSameWord(word, w)))
+                if (!processedWords.Contains(word) && !processedWords.Any(w => IsSameWord(word, w)))
                 {
                     processedWords.Add(word);
                 }
@@ -131,6 +131,38 @@ namespace LingoAITutor.Host.Utilities
             }
             _dbContext.SaveChanges();
         }
+
+        public static bool IsSameWord(string w1, string w2, IrregularVerbs? iv = null)
+        {
+            var wl1 = w1.ToLower();
+            var wl2 = w2.ToLower();
+            if (wl1 == wl2) return true;
+            var n1 = NormalizeWord(wl1, iv);
+            var n2 = NormalizeWord(wl2, iv);
+            return (n1 == n2 || n1 + "e" == n2 || n1 == n2 + "e");
+        }
+
+        private static string NormalizeWord(string w, IrregularVerbs? iv)
+        {
+            if (iv is not null)
+            {
+                var v1 = iv.FindFirstForm(w);
+                if (v1 != null) return v1;
+            }
+            if (w.EndsWith("ies")) return w[..^3] + "y";
+            if (w.EndsWith("es")) return w[..^2];
+            if (w.EndsWith("s") && w.Length > 1 && w[w.Length - 2] != 's' && w[w.Length - 2] != 'h' && w[w.Length - 2] != 'x') return w[..^1];
+            if (w.EndsWith("ed")) return w[..^2];
+
+            if (w.EndsWith("ing"))
+            {
+                if (w.Length > 4 && w[w.Length - 4] == w[w.Length - 5])
+                    return w[..^4];
+                return w[..^3];
+            }
+            return w;
+        }
+
 
     }
 }

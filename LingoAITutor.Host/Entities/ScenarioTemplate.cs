@@ -14,5 +14,6 @@ namespace LingoAITutor.Host.Entities
         public string? Content { get; set; }
         public AIMode AIModeInChat { get; set; }
         public bool NextQuestionRandom { get; set; }
+        public string? TranslatedBookFile { get; set; }        
     }
 }

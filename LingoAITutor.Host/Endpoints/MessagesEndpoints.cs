@@ -19,7 +19,7 @@ namespace LingoAITutor.Host.Endpoints
             var lesson = await dbContext.Lessons.Where(ch => ch.LessonId == lessonId).Include(ch => ch.Messages).FirstOrDefaultAsync();
             if (lesson is null || lesson.UserId != userIdHelper.GetUserId())
                 return Results.NotFound("Lesson not found");
-            return Results.Ok(lesson.Messages.Select(m => new MessageDto()
+            return Results.Ok(lesson.Messages.OrderBy(m=>m.Number).Select(m => new MessageDto()
             {
                 MessageId = m.MessageId,
                 Content = m.Content,

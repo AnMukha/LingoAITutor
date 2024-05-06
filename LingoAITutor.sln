@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33927.249
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LingoAITutor.Host", "LingoAITutor.Host\LingoAITutor.Host.csproj", "{BE4A1307-BF85-43E2-93FA-0A4D73CFD220}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LingoAITutor.Tests", "LingoAITutor.Tests\LingoAITutor.Tests.csproj", "{BDEE1242-6E35-4D53-B080-090C1588067B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{BE4A1307-BF85-43E2-93FA-0A4D73CFD220}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4A1307-BF85-43E2-93FA-0A4D73CFD220}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE4A1307-BF85-43E2-93FA-0A4D73CFD220}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDEE1242-6E35-4D53-B080-090C1588067B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDEE1242-6E35-4D53-B080-090C1588067B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDEE1242-6E35-4D53-B080-090C1588067B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDEE1242-6E35-4D53-B080-090C1588067B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

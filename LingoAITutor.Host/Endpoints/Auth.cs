@@ -23,10 +23,6 @@ namespace LingoAITutor.Host.Endpoints
 
         private static async Task<IResult> Login(LingoDbContext context, LoginDto loginData)
         {
-            //ClaimsPrincipal cl, 
-            //var user = cl.FindFirst(claim => claim.Type == "id");
-            //var userId = Guid.Parse(user!.Properties["id"]);
-
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == loginData.UserName);
             if (user == null)
             {
@@ -40,10 +36,6 @@ namespace LingoAITutor.Host.Endpoints
 
             var hasher = new PasswordHasher<User>();
             
-            //var passwH = hasher.HashPassword(user, "ppp");
-            //user.PasswordHash = passwH;
-            //context.SaveChanges();
-
             var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, loginData.Password);
             if (verificationResult == PasswordVerificationResult.Failed)
             {

@@ -1,6 +1,5 @@
 ﻿using LingoAITutor.Host.Entities.Enums;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LingoAITutor.Host.Entities
 {

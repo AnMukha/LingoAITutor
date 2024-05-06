@@ -3,7 +3,7 @@ using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace LingoAITutor.Host.Services
+namespace LingoAITutor.Host.Services.Vocabulary
 {
     public class VocabularyMapGenerator
     {
@@ -15,7 +15,7 @@ namespace LingoAITutor.Host.Services
         }
 
         public async Task<WordProgressDto[]> GetMap(Guid userId)
-        {            
+        {
             var words = await _dbContext.Words.ToArrayAsync();
             var progress = await _dbContext.UserWordProgresses.Where(p => p.User.Id == userId).ToArrayAsync();
             var progressDict = progress.DistinctBy(p => p.WordID).ToDictionary(p => p.WordID);

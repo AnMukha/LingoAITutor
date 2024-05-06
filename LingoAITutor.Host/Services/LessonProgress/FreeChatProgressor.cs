@@ -20,7 +20,7 @@ namespace LingoAITutor.Host.Services.LessonProgress
             _openAPI = openAPI;
         }
 
-        public async Task<Message?> ProgressLesson(Lesson lesson, ScenarioTemplate scenario)
+        public async Task<Message?> ProgressLesson(Lesson lesson)
         {
             var lessonWithMessages = await _dbContext.Lessons.Include(ch => ch.Messages).FirstOrDefaultAsync(ch => ch.LessonId == lesson.LessonId);
             if (lessonWithMessages == null) return null;
@@ -44,6 +44,11 @@ namespace LingoAITutor.Host.Services.LessonProgress
             _dbContext.Add(gptMessage);
             await _dbContext.SaveChangesAsync();
             return gptMessage;
+        }
+
+        public Task<Message?> ToNextSection(Lesson lesson, ScenarioTemplate scenario)
+        {
+            throw new NotImplementedException();
         }
 
         private async Task<string> GetGPTResponse(Message[] messages)

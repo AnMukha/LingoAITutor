@@ -1,9 +1,9 @@
 ﻿using LingoAITutor.Host.Entities;
-using LingoAITutor.Host.Services;
+using LingoAITutor.Host.Services.Vocabulary;
 using System.Security.Claims;
 
 namespace LingoAITutor.Host.Endpoints
-{    
+{
     public static class VocabularyMapEndpoints
     {
         public static void AddEndpoints(WebApplication application)

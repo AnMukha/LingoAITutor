@@ -55,7 +55,7 @@
     <None Update="txt\COCA 5000.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="txt\content\NetQuestions.txt">
+    <None Update="txt\questions\NetQuestions.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="txt\irregular.txt">

@@ -35,6 +35,7 @@ namespace LingoAITutor.Host.Utilities.Seeders
                     existedSc.ScenarioType = newSc.ScenarioType;
                     existedSc.Description = newSc.Description;
                     existedSc.NextQuestionRandom = newSc.NextQuestionRandom;
+                    existedSc.TranslatedBookFile = newSc.TranslatedBookFile;
                 }
             }            
             _context.SaveChanges();
@@ -51,7 +52,7 @@ namespace LingoAITutor.Host.Utilities.Seeders
             s.Preface = null;
             s.AIModeInChat = Entities.Enums.AIMode.Good;
             s.ScenarioType = Entities.Enums.ScenarioType.Questions;
-            s.Content = ReadFile(Path.Combine(_path, "content\\NetQuestions.txt"));
+            s.Content = ReadFile(Path.Combine(_path, "questions\\NetQuestions.txt"));
             s.NextQuestionRandom = true;
             return s;
         }
@@ -71,7 +72,8 @@ namespace LingoAITutor.Host.Utilities.Seeders
                             "This lesson choose a random place in this book ant then you can start to translate it from your native languate to stydied language.";
             s.AIModeInChat = Entities.Enums.AIMode.Middle;
             s.ScenarioType = Entities.Enums.ScenarioType.Translation;
-            s.Content = "HTMOR";
+            s.Content = null;
+            s.TranslatedBookFile = "txt/books/hpmor.txt";
             return s;
         }
 

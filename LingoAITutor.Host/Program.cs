@@ -1,9 +1,11 @@
 using LingoAITutor.Host.Endpoints;
-using LingoAITutor.Host.Entities;
 using LingoAITutor.Host.Infrastructure;
 using LingoAITutor.Host.Services;
-using LingoAITutor.Host.Services.Common;
+using LingoAITutor.Host.Services.Interfaces;
 using LingoAITutor.Host.Services.LessonProgress;
+using LingoAITutor.Host.Services.LessonProgress.QuestionsLessonProgress;
+using LingoAITutor.Host.Services.Translation;
+using LingoAITutor.Host.Services.Vocabulary;
 using LingoAITutor.Host.Utilities;
 using LingoAITutor.Host.Utilities.Seeders;
 using Microsoft.AspNetCore.Http.Json;
@@ -75,15 +77,20 @@ builder.Services.AddTransient<Words100Import>();
 builder.Services.AddTransient<NamesExcluding>();
 builder.Services.AddTransient<IrregularImport>();
 builder.Services.AddSingleton(new OpenAIAPI(openAIKey));
-builder.Services.AddTransient<TranslationExerciseAnaliser>();
-builder.Services.AddTransient<TranslationExerciseGenerator>();
 builder.Services.AddTransient<VocabularySizeCalculation>();
 builder.Services.AddTransient<VocabularyMapGenerator>();
 builder.Services.AddSingleton<AllWords>();
 builder.Services.AddSingleton<IrregularVerbs>();
-builder.Services.AddTransient<LessonProgressor>();
+builder.Services.AddTransient<LessonProgressorFactory>();
 builder.Services.AddTransient<GrammarChecker>();
 builder.Services.AddTransient<MissingWordGuesser>();
+
+builder.Services.AddTransient<LessonProgressorFactory>();
+builder.Services.AddTransient<FreeChatProgressor>();
+builder.Services.AddTransient<QuestionsLessonProgressor>();
+builder.Services.AddTransient<TranslationLessonProgressor>();
+builder.Services.AddTransient<BooksService>();
+builder.Services.AddTransient<SentenceTranslator>();
 
 builder.Services.AddCors();
 
@@ -110,7 +117,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 VocabularyMapEndpoints.AddEndpoints(app);
-VocabularyTrainingEndpoints.AddEndpoints(app);
 Auth.AddEndpoints(app);
 LessonEndpoints.AddEndpoints(app);
 MessagesEndpoints.AddEndpoints(app);

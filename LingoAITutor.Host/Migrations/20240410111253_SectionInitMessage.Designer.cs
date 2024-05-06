@@ -3,6 +3,7 @@ using System;
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LingoAITutor.Host.Migrations
 {
     [DbContext(typeof(LingoDbContext))]
-    partial class LingoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240410111253_SectionInitMessage")]
+    partial class SectionInitMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,6 +142,31 @@ namespace LingoAITutor.Host.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("LingoAITutor.Host.Entities.RangeProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("Progress")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("StartPosition")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserProgressId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("WordsCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProgressId");
+
+                    b.ToTable("RangeProgresses");
+                });
+
             modelBuilder.Entity("LingoAITutor.Host.Entities.ScenarioTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -164,9 +192,6 @@ namespace LingoAITutor.Host.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Title")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TranslatedBookFile")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -214,36 +239,6 @@ namespace LingoAITutor.Host.Migrations
                     b.HasIndex("ParentTextId");
 
                     b.ToTable("TextSentence");
-                });
-
-            modelBuilder.Entity("LingoAITutor.Host.Entities.Translation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("SourceLanguage")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SourceSentence")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TargetLanguage")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TranslatedSentence")
-                        .HasColumnType("text");
-
-                    b.Property<int>("TranslationHash")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TranslationHash");
-
-                    b.ToTable("Translations");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.User", b =>
@@ -314,6 +309,26 @@ namespace LingoAITutor.Host.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("UserProgresses");
+                });
+
+            modelBuilder.Entity("LingoAITutor.Host.Entities.UserTextProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SentenceNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TextId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserTextProgresses");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.UserWordProgress", b =>
@@ -418,6 +433,17 @@ namespace LingoAITutor.Host.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("LingoAITutor.Host.Entities.RangeProgress", b =>
+                {
+                    b.HasOne("LingoAITutor.Host.Entities.UserProgress", "UserProgress")
+                        .WithMany("RangeProgresses")
+                        .HasForeignKey("UserProgressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProgress");
+                });
+
             modelBuilder.Entity("LingoAITutor.Host.Entities.TextSentence", b =>
                 {
                     b.HasOne("LingoAITutor.Host.Entities.Text", "ParentText")
@@ -461,6 +487,11 @@ namespace LingoAITutor.Host.Migrations
                     b.Navigation("Lessons");
 
                     b.Navigation("UserWordProgresses");
+                });
+
+            modelBuilder.Entity("LingoAITutor.Host.Entities.UserProgress", b =>
+                {
+                    b.Navigation("RangeProgresses");
                 });
 
             modelBuilder.Entity("LingoAITutor.Host.Entities.Word", b =>

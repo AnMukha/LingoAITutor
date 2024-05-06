@@ -1,5 +1,6 @@
 ﻿using LingoAITutor.Host.Dto;
 using LingoAITutor.Host.Entities;
+using LingoAITutor.Host.Entities.Enums;
 using LingoAITutor.Host.Infrastructure;
 using LingoAITutor.Host.Services;
 using LingoAITutor.Host.Services.LessonProgress;
@@ -44,19 +45,25 @@ namespace LingoAITutor.Host.Endpoints
             {
                 Summary = "Submit message",
             });
+            application.MapPost("api/lessons/{lessonId}/nextSection", NextSection).RequireAuthorization().WithOpenApi(operation => new(operation)
+            {
+                Summary = "Go to next section of chat",
+            });
+
         }
 
         private static async Task<IResult> GetLessons(LingoDbContext dbContext, UserIdHepler userIdHelper)
         {
             var lessons = await dbContext.Lessons.Include(l=> l.Scenario).Where(l => l.UserId == userIdHelper.GetUserId()).OrderByDescending(l => l.Created).ToArrayAsync();
-            return Results.Ok(lessons.Select(ch => new LessonDto() 
+            return Results.Ok(lessons.Select(ls => new LessonDto() 
             {
-                LessonId = ch.LessonId,
-                Title = ch.Title,
-                Created = ch.Created,                
-                LowQualityCount = ch.LowQualityCount,
-                MessagesCount = ch.MessagesCount,
-                RevisedCount = ch.RevisedCount
+                LessonId = ls.LessonId,
+                Title = ls.Title,
+                Created = ls.Created,                
+                LowQualityCount = ls.LowQualityCount,
+                MessagesCount = ls.MessagesCount,
+                RevisedCount = ls.RevisedCount,
+                ScenarioType = ls.Scenario.ScenarioType
             }).ToArray());
         }
 
@@ -75,11 +82,12 @@ namespace LingoAITutor.Host.Endpoints
                 Preface = string.IsNullOrWhiteSpace(lesson.Scenario.Preface) ? lesson.Scenario.Description: lesson.Scenario.Preface,
                 LowQualityCount = lesson.LowQualityCount,
                 MessagesCount = lesson.MessagesCount,
-                RevisedCount = lesson.RevisedCount,                
+                RevisedCount = lesson.RevisedCount,
+                ScenarioType = lesson.Scenario.ScenarioType
             });
         }
 
-        private static async Task<IResult> CreateLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressor lessonProgressor, 
+        private static async Task<IResult> CreateLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressorFactory lessonProgressorFactory, 
                                                         [FromBody] ScenarioOptionsDto options)
         {
             var scenario = dbContext.ScenarioTemplates.FirstOrDefault(l => l.Id == options.ScenarioId);
@@ -99,8 +107,9 @@ namespace LingoAITutor.Host.Endpoints
                 NextQuestionRandom = scenario.NextQuestionRandom
             };
             dbContext.Add(newLesson);
-            await dbContext.SaveChangesAsync();            
-            await lessonProgressor.ProgressLesson(newLesson, scenario);
+            await dbContext.SaveChangesAsync();
+            var lessonProgressor = lessonProgressorFactory.CreateProgressor(scenario.ScenarioType);
+            await lessonProgressor.ProgressLesson(newLesson);
             return Results.Ok(lessonId.ToString());
         }
 
@@ -153,25 +162,45 @@ namespace LingoAITutor.Host.Endpoints
             });
         }
 
-        private static async Task<IResult> ProgressLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressor lessonProgressor, Guid lessonId)
+        private static async Task<IResult> NextSection(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressorFactory lessonProgressorFactory, Guid lessonId)
+        {
+            var lesson = await dbContext.Lessons.Include(l => l.Scenario).FirstOrDefaultAsync(m => m.LessonId == lessonId);
+            if (lesson == null)
+                return Results.NotFound();
+            if (lesson.UserId != userIdHelper.GetUserId())
+                return Results.Unauthorized();
+            var lessonProgressor = lessonProgressorFactory.CreateProgressor(lesson.Scenario.ScenarioType);
+            var sectionStartMessage = await lessonProgressor.ToNextSection(lesson, lesson.Scenario);
+            if (sectionStartMessage == null)
+                return Results.Ok();
+            return Results.Ok(new MessageDto()
+            {
+                Content = sectionStartMessage.Content,
+                MessageId = sectionStartMessage.MessageId,
+                MessageType = sectionStartMessage.MessageType                                  
+            });
+        }
+
+        private static async Task<IResult> ProgressLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressorFactory lessonProgressorFactory, Guid lessonId)
         {
             var lesson = await dbContext.Lessons.Include(l=> l.Scenario).FirstOrDefaultAsync(m => m.LessonId == lessonId);
             if (lesson == null)
                 return Results.NotFound();
             if (lesson.UserId != userIdHelper.GetUserId())
                 return Results.Unauthorized();
-            var gptMessage = await lessonProgressor.ProgressLesson(lesson, lesson.Scenario);
+            var lessonProgressor = lessonProgressorFactory.CreateProgressor(lesson.Scenario.ScenarioType);
+            var gptMessage = await lessonProgressor.ProgressLesson(lesson);
             if (gptMessage ==null)
                 return Results.NotFound();
             return Results.Ok(new MessageDto()
             {
                 Content = gptMessage.Content,
                 MessageId = gptMessage.MessageId,
-                MessageType = Entities.Enums.MessageType.GPTMessage
+                MessageType = MessageType.GPTMessage
             });
         }
 
-        private static async Task<IResult> DeleteLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressor lessonProgressor, Guid lessonId)
+        private static async Task<IResult> DeleteLesson(LingoDbContext dbContext, UserIdHepler userIdHelper, LessonProgressorFactory lessonProgressor, Guid lessonId)
         {
             var lesson = await dbContext.Lessons.Include(ch => ch.Messages).FirstOrDefaultAsync(m => m.LessonId == lessonId);
             if (lesson == null)

@@ -1,7 +1,4 @@
-﻿using LingoAITutor.Host.Entities;
-using System.Security.Claims;
-
-namespace LingoAITutor.Host.Endpoints
+﻿namespace LingoAITutor.Host.Endpoints
 {
     public class UserIdHepler
     {

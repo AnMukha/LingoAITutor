@@ -2,10 +2,10 @@
 using LingoAITutor.Host.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace LingoAITutor.Host.Services
+namespace LingoAITutor.Host.Services.Vocabulary
 {
     public class AllWords
-    {        
+    {
         private List<Word>? _words = null;
         private Dictionary<string, Word>? _wordsByText = null;
         private IServiceScopeFactory _serviceScopeFactory;

@@ -7,7 +7,6 @@ namespace LingoAITutor.Host.Entities
         [Key]
         public Guid UserId { get; set; }
         public int ExerciseNumber { get; set; }
-        public int EstimationNumber { get; set; }
-        public virtual ICollection<RangeProgress> RangeProgresses { get; set; } = null!;
+        public int EstimationNumber { get; set; }        
     }
 }
